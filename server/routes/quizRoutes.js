@@ -1,7 +1,7 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const { generateQuiz, getQuiz, getQuizHistory } = require('../controllers/quizController');
-const authMiddleware = require('../middleware/authMiddleware');
+import { generateQuiz, getQuiz, getQuizHistory } from '../controllers/quizController.js';
+import authMiddleware from '../middleware/authMiddleware.js';
 
 // POST /api/quiz/generate - Protected
 router.post('/generate', authMiddleware, generateQuiz);
@@ -12,4 +12,4 @@ router.get('/history/:userId', authMiddleware, getQuizHistory);
 // GET /api/quiz/:roomCode - Public
 router.get('/:roomCode', getQuiz);
 
-module.exports = router;
+export default router;

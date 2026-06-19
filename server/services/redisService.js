@@ -1,4 +1,4 @@
-const { getRedis } = require('../config/redis');
+import { getRedis } from '../config/redis.js';
 
 const initLeaderboard = async (roomCode) => {
   const redis = getRedis();
@@ -61,19 +61,20 @@ const calculateAndAddScore = async (roomCode, userId, basePoints, timeLeft, isCo
   const redis = getRedis();
 
   if (!isCorrect) {
-    // Reset streak on wrong answer
+    // Reset streak on wrong answer, score remains unchanged
     const streakKey = `quiz:streak:${roomCode}:${userId}`;
     await redis.set(streakKey, 0);
-    return { pointsEarned: 0, totalScore: await getPlayerScore(roomCode, userId) };
+    const totalScore = await getPlayerScore(roomCode, userId);
+    return { pointsEarned: 0, totalScore, streak: 0 };
   }
 
+  // Award exactly 5 points for correct answers
+  const pointsEarned = 5;
+  const totalScore = await addScore(roomCode, userId, pointsEarned);
+
+  // Increment streak in Redis
   const streakKey = `quiz:streak:${roomCode}:${userId}`;
   const streak = await redis.incr(streakKey);
-  const streakMultiplier = Math.min(streak, 3);
-  const timeFraction = Math.max(timeLeft, 0) / 20;
-  const pointsEarned = Math.round(basePoints * streakMultiplier * timeFraction);
-
-  const totalScore = await addScore(roomCode, userId, pointsEarned);
 
   return { pointsEarned, totalScore, streak };
 };
@@ -129,7 +130,7 @@ const cleanupRoom = async (roomCode) => {
   }
 };
 
-module.exports = {
+export {
   initLeaderboard,
   addScore,
   getTopPlayers,

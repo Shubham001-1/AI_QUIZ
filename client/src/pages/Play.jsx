@@ -119,8 +119,11 @@ const Play = () => {
       setTimeout(() => setTabWarning(''), 5000);
     };
 
-    const handleTabSwitchPenalty = ({ message }) => {
+    const handleTabSwitchPenalty = ({ message, totalScore }) => {
       setTabWarning(message);
+      if (totalScore !== undefined) {
+        setMyScore(totalScore);
+      }
       setTimeout(() => setTabWarning(''), 5000);
     };
 

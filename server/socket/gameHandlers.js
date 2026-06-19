@@ -1,5 +1,5 @@
-const Quiz = require('../models/Quiz');
-const redisService = require('../services/redisService');
+import Quiz from '../models/Quiz.js';
+import * as redisService from '../services/redisService.js';
 
 // In-memory room state (supplement to Redis)
 // roomState[roomCode] = { host: socketId, players: Map<userId, {nickname, socketId}>, questionStartTime, currentQuestionIndex, timer, leaderboardInterval, answeredThisRound: Set, questions: [] }
@@ -253,9 +253,9 @@ const gameHandlers = (io, socket) => {
       const count = await redisService.incrementTabSwitch(roomCode, userId);
       console.log(`Tab switch detected for ${userId} in room ${roomCode}. Count: ${count}`);
 
-      if (count >= 2) {
-        // Second offense: deduct 50 points
-        await redisService.addScore(roomCode, userId, -50);
+      if (count >= 3) {
+        // Third and subsequent offenses: deduct 5 points
+        await redisService.addScore(roomCode, userId, -5);
         const room = roomState[roomCode];
         if (room && room.players.has(userId)) {
           const player = room.players.get(userId);
@@ -264,14 +264,18 @@ const gameHandlers = (io, socket) => {
 
           // Notify the player
           socket.emit('TAB_SWITCH_PENALTY', {
-            message: 'Tab switching detected! -50 points deducted.',
-            deduction: 50,
+            message: `Tab switching detected! -5 points deducted (Attempt ${count}).`,
+            deduction: 5,
             totalScore: Math.max(0, newScore),
           });
         }
+      } else if (count === 2) {
+        socket.emit('TAB_SWITCH_WARNING', {
+          message: 'Warning (2/2): Tab switching detected! Further tab switches will result in -5 points deduction.',
+        });
       } else {
         socket.emit('TAB_SWITCH_WARNING', {
-          message: 'Warning: Tab switching detected! Next offense will result in -50 points.',
+          message: 'Warning (1/2): Tab switching detected! Please stay on the page to avoid point deduction.',
         });
       }
     } catch (error) {
@@ -424,4 +428,4 @@ const endGame = async (io, roomCode) => {
   }
 };
 
-module.exports = gameHandlers;
+export default gameHandlers;

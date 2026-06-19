@@ -26,6 +26,7 @@ const Host = () => {
   const [phase, setPhase] = useState(GAME_PHASES.SETUP);
   const [topic, setTopic] = useState('');
   const [topicError, setTopicError] = useState('');
+  const [difficulty, setDifficulty] = useState('medium');
   const [roomCode, setRoomCode] = useState('');
   const [quizId, setQuizId] = useState('');
   const [questions, setQuestions] = useState([]);
@@ -128,7 +129,7 @@ const Host = () => {
     try {
       const { data } = await axios.post(
         `${API_URL}/api/quiz/generate`,
-        { topic: topic.trim() },
+        { topic: topic.trim(), difficulty },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (data.success) {
@@ -172,6 +173,7 @@ const Host = () => {
   const handleReset = () => {
     setPhase(GAME_PHASES.SETUP);
     setTopic('');
+    setDifficulty('medium');
     setRoomCode('');
     setQuizId('');
     setQuestions([]);
@@ -237,6 +239,20 @@ const Host = () => {
                   />
                   {topicError && <p className="text-red-400 text-xs mt-1">{topicError}</p>}
                   <p className="text-white/30 text-xs mt-1">{topic.length}/200 characters</p>
+                </div>
+
+                <div>
+                  <label className="block text-white/60 text-sm font-medium mb-1.5">Difficulty Level</label>
+                  <select
+                    id="quiz-difficulty-select"
+                    value={difficulty}
+                    onChange={(e) => setDifficulty(e.target.value)}
+                    className="input-field text-lg py-4 bg-[#1e1a35] text-white appearance-none cursor-pointer"
+                    style={{ backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>")`, backgroundPosition: 'right 16px center', backgroundRepeat: 'no-repeat', backgroundSize: '16px' }}
+                  >
+                    <option value="medium" className="bg-[#0a0814]">Medium (Standard Challenge)</option>
+                    <option value="hard" className="bg-[#0a0814]">Hard (Difficult / Challenging)</option>
+                  </select>
                 </div>
 
                 <button

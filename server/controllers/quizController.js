@@ -1,5 +1,5 @@
-const Quiz = require('../models/Quiz');
-const { generateQuestions } = require('../services/geminiService');
+import Quiz from '../models/Quiz.js';
+import { generateQuestions } from '../services/geminiService.js';
 
 const generateRoomCode = () => {
   return Math.random().toString(36).slice(2, 8).toUpperCase();
@@ -23,7 +23,7 @@ const generateUniqueRoomCode = async () => {
 
 const generateQuiz = async (req, res) => {
   try {
-    const { topic } = req.body;
+    let { topic, difficulty } = req.body;
 
     if (!topic || typeof topic !== 'string' || topic.trim().length === 0) {
       return res.status(400).json({
@@ -39,7 +39,16 @@ const generateQuiz = async (req, res) => {
       });
     }
 
-    const questions = await generateQuestions(topic.trim());
+    // Validate difficulty
+    if (!difficulty || typeof difficulty !== 'string') {
+      difficulty = 'medium';
+    }
+    difficulty = difficulty.toLowerCase().trim();
+    if (difficulty !== 'medium' && difficulty !== 'hard') {
+      difficulty = 'medium';
+    }
+
+    const questions = await generateQuestions(topic.trim(), difficulty);
     const roomCode = await generateUniqueRoomCode();
 
     const quiz = new Quiz({
@@ -148,4 +157,4 @@ const getQuizHistory = async (req, res) => {
   }
 };
 
-module.exports = { generateQuiz, getQuiz, getQuizHistory };
+export { generateQuiz, getQuiz, getQuizHistory };

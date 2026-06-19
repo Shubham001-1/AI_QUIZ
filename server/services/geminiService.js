@@ -1,4 +1,4 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 let genAI;
 
@@ -20,10 +20,15 @@ const MODEL_CANDIDATES = [
   'gemini-2.0-flash',
 ];
 
-const generateQuestions = async (topic) => {
+const generateQuestions = async (topic, difficulty = 'medium') => {
   const ai = getGenAI();
 
-  const prompt = `You are a quiz question generator. Return ONLY a valid JSON array with no markdown, no backticks, no explanation. Each element must have exactly these fields: { "questionText": string, "options": [string, string, string, string], "correctOptionIndex": number (0-3), "points": 100 }. Generate exactly 10 questions about: ${topic}`;
+  let difficultyDesc = 'moderate / medium-difficulty questions (no easy, basic, or trivial questions)';
+  if (difficulty === 'hard') {
+    difficultyDesc = 'advanced, difficult, and highly challenging questions (absolutely no easy, simple, or basic questions)';
+  }
+
+  const prompt = `You are a quiz question generator. Return ONLY a valid JSON array with no markdown, no backticks, no explanation. Each element must have exactly these fields: { "questionText": string, "options": [string, string, string, string], "correctOptionIndex": number (0-3), "points": 100 }. Generate exactly 10 ${difficultyDesc} about: ${topic}`;
 
   let lastError;
 
@@ -121,4 +126,4 @@ const generateQuestions = async (topic) => {
   throw new Error(`Gemini question generation failed: ${lastError?.message}`);
 };
 
-module.exports = { generateQuestions };
+export { generateQuestions };

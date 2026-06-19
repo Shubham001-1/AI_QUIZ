@@ -1,13 +1,13 @@
-require('dotenv').config();
-const express = require('express');
-const http = require('http');
-const { Server } = require('socket.io');
-const cors = require('cors');
-const connectDB = require('./config/db');
-const { connectRedis } = require('./config/redis');
-const authRoutes = require('./routes/authRoutes');
-const quizRoutes = require('./routes/quizRoutes');
-const gameHandlers = require('./socket/gameHandlers');
+import 'dotenv/config';
+import express from 'express';
+import http from 'http';
+import { Server } from 'socket.io';
+import cors from 'cors';
+import connectDB from './config/db.js';
+import { connectRedis } from './config/redis.js';
+import authRoutes from './routes/authRoutes.js';
+import quizRoutes from './routes/quizRoutes.js';
+import gameHandlers from './socket/gameHandlers.js';
 
 const app = express();
 const server = http.createServer(app);
@@ -82,4 +82,4 @@ const startServer = async () => {
 
 startServer();
 
-module.exports = { app, server, io };
+export { app, server, io };
