@@ -13,12 +13,13 @@
 
 ## 🚀 Features
 
-- **AI Question Generation** — Enter any topic; Gemini generates 10 perfect quiz questions
+- **AI Question Generation** — Enter any topic; Gemini generates 10 quiz questions with automatic model fallback
 - **Real-Time Gameplay** — Socket.io keeps all players perfectly in sync
 - **Live Leaderboard** — Redis sorted sets update every 2 seconds
 - **Speed + Streak Scoring** — Faster answers and consecutive correct answers give bonus points (up to 3×)
-- **Anti-Cheat** — Tab switch detection, answer lock, and server-side time validation
+- **Anti-Cheat** — Tab switch detection with progressive warnings and point deductions, answer lock, and server-side time validation
 - **JWT Auth** — Hosts register/login; guest players just need a nickname
+- **Host Reconnect** — 30-second grace period if the host disconnects mid-game
 - **Confetti & Podium** — Spectacular end-game screen with top 3 podium and animations
 
 ---
@@ -36,6 +37,7 @@
 │               SERVER (Express + Socket.io)           │
 │  /api/auth    → authController (JWT + bcrypt)        │
 │  /api/quiz    → quizController (generate, get, hist) │
+│  /health      → health check endpoint                │
 │  Socket.io    → gameHandlers (full game lifecycle)   │
 └──────────┬──────────────────────────┬───────────────┘
            │                          │
@@ -43,12 +45,13 @@
 │   MongoDB (Mongoose) │  │    Redis (ioredis)         │
 │   Users + Quizzes    │  │    Sorted set leaderboard  │
 │   Final leaderboard  │  │    Streaks, answered sets  │
-└─────────────────────┘  └───────────────────────────┘
-           │
+└─────────────────────┘  │    Tab-switch counters     │
+           │              └───────────────────────────┘
 ┌──────────▼──────────┐
 │  Google Gemini AI    │
-│  gemini-1.5-flash    │
-│  10-question gen     │
+│  gemini-2.5-flash    │
+│  (+ 3 fallback       │
+│   models)            │
 └─────────────────────┘
 ```
 
@@ -56,12 +59,12 @@
 
 | Layer | Technology |
 |-------|-----------|
-| Frontend | React 18 + Vite + Tailwind CSS |
-| Backend | Node.js + Express.js |
-| Database | MongoDB + Mongoose |
-| Cache / Leaderboard | Redis + ioredis |
-| Real-Time | Socket.io (server + client) |
-| AI | Google Gemini API (`gemini-1.5-flash`) |
+| Frontend | React 18 + Vite + Tailwind CSS v3 |
+| Backend | Node.js + Express.js (ESM) |
+| Database | MongoDB 7.0 + Mongoose |
+| Cache / Leaderboard | Redis 7.2 + ioredis |
+| Real-Time | Socket.io 4.x (server + client) |
+| AI | Google Gemini API (`@google/generative-ai` ^0.24.1) |
 | Auth | JWT + bcryptjs |
 
 ---
@@ -74,7 +77,8 @@ quiz_prototype/
 ├── README.md
 │
 ├── server/
-│   ├── server.js              # Entry point
+│   ├── server.js              # Entry point (Express + Socket.io setup)
+│   ├── test-models.js         # Utility script to test Gemini model availability
 │   ├── .env.example
 │   ├── package.json
 │   ├── config/
@@ -90,12 +94,12 @@ quiz_prototype/
 │   │   ├── authController.js
 │   │   └── quizController.js
 │   ├── services/
-│   │   ├── geminiService.js
-│   │   └── redisService.js
+│   │   ├── geminiService.js   # AI question generation with model fallback
+│   │   └── redisService.js    # Leaderboard, scoring, anti-cheat helpers
 │   ├── middleware/
 │   │   └── authMiddleware.js
 │   └── socket/
-│       └── gameHandlers.js
+│       └── gameHandlers.js    # Full game lifecycle (lobby → active → finished)
 │
 └── client/
     ├── index.html
@@ -106,8 +110,8 @@ quiz_prototype/
     ├── package.json
     └── src/
         ├── main.jsx
-        ├── App.jsx
-        ├── socket.js
+        ├── App.jsx            # Routes + AuthContext + ProtectedRoute
+        ├── socket.js          # Socket.io singleton
         ├── index.css
         ├── hooks/
         │   └── useSocket.js
@@ -133,7 +137,7 @@ quiz_prototype/
 
 - **Node.js** ≥ 18.x
 - **Docker** (for MongoDB + Redis) — or install them locally
-- **Google Gemini API Key** — get one at https://makersuite.google.com/app/apikey
+- **Google Gemini API Key** — get one at https://aistudio.google.com/app/apikey
 
 ---
 
@@ -145,8 +149,8 @@ docker-compose up -d
 ```
 
 This starts:
-- **MongoDB** on `localhost:27017`
-- **Redis** on `localhost:6379`
+- **MongoDB 7.0** on `localhost:27017` (database: `quizai`)
+- **Redis 7.2** on `localhost:6379` (max memory: 256 MB, LRU eviction, AOF persistence)
 
 ---
 
@@ -179,6 +183,8 @@ npm run dev
 ```
 
 The server will be available at `http://localhost:5000`.
+
+> **Tip:** You can verify your Gemini API key and check which models are accessible by running `node test-models.js` from the `server/` directory.
 
 ---
 
@@ -215,7 +221,7 @@ The app will be available at `http://localhost:5173`.
 ### As a Host:
 1. Register or log in
 2. Go to **Host a Quiz**
-3. Enter a topic (e.g., "Python basics")
+3. Enter a topic (e.g., "Python basics") and select a difficulty
 4. Click **Generate Quiz with AI** — wait ~5 seconds for Gemini
 5. Share the 6-character **Room Code** with players
 6. Click **Start Game** when everyone has joined
@@ -231,6 +237,21 @@ The app will be available at `http://localhost:5173`.
 
 ---
 
+## 🤖 Gemini AI — Model Fallback
+
+The `geminiService.js` attempts models in this priority order, falling back automatically on `404` (model not available for your key) or `429` (quota exceeded):
+
+| Priority | Model |
+|----------|-------|
+| 1st | `gemini-2.5-flash` |
+| 2nd | `gemini-2.5-flash-lite` |
+| 3rd | `gemini-2.0-flash-lite` |
+| 4th | `gemini-2.0-flash` |
+
+Hard errors (e.g., invalid API key, malformed JSON) abort the fallback chain immediately.
+
+---
+
 ## 📡 Socket.io Events Reference
 
 ### Client → Server
@@ -241,8 +262,8 @@ The app will be available at `http://localhost:5173`.
 | `PLAYER_JOIN_ROOM` | `{ roomCode, nickname }` | Player joins with a nickname |
 | `START_GAME` | `{ roomCode }` | Host starts the game (host only) |
 | `SUBMIT_ANSWER` | `{ roomCode, userId, selectedOption, timeLeft }` | Player submits an answer |
-| `NEXT_QUESTION` | `{ roomCode }` | Host advances to next question |
-| `END_GAME` | `{ roomCode }` | Host ends the game manually |
+| `NEXT_QUESTION` | `{ roomCode }` | Host advances to next question (host only) |
+| `END_GAME` | `{ roomCode }` | Host ends the game manually (host only) |
 | `TAB_SWITCH_DETECTED` | `{ userId, roomCode }` | Anti-cheat: client reports tab switch |
 
 ### Server → Client
@@ -250,16 +271,16 @@ The app will be available at `http://localhost:5173`.
 | Event | Payload | Description |
 |-------|---------|-------------|
 | `ROOM_JOINED` | `{ roomCode, players[], userId }` | Confirms join, returns player list |
-| `PLAYER_JOINED` | `{ players[] }` | Broadcast when anyone joins lobby |
+| `PLAYER_JOINED` | `{ players[] }` | Broadcast when anyone joins or leaves lobby |
 | `GAME_STARTED` | — | Signals game is beginning |
-| `NEW_QUESTION` | `{ question, questionIndex, totalQuestions, timeLimit }` | Next question (no correct answer) |
-| `ANSWER_RESULT` | `{ correct, pointsEarned, totalScore, correctOptionIndex }` | Sent only to answering player |
+| `NEW_QUESTION` | `{ question, questionIndex, totalQuestions, timeLimit }` | Next question (correct answer excluded) |
+| `ANSWER_RESULT` | `{ correct, pointsEarned, totalScore, correctOptionIndex }` | Sent only to the answering player |
 | `TIME_UP` | `{ correctOptionIndex, questionIndex }` | 20-second timer expired |
 | `LEADERBOARD_UPDATE` | `{ leaderboard[] }` | Top 10 scores, every 2 seconds |
 | `GAME_OVER` | `{ finalLeaderboard[] }` | Game ended, full results |
-| `HOST_DISCONNECTED` | `{ message }` | Host left the game |
-| `TAB_SWITCH_WARNING` | `{ message }` | First tab-switch warning |
-| `TAB_SWITCH_PENALTY` | `{ message, deduction, totalScore }` | -50pts on second offense |
+| `HOST_DISCONNECTED` | `{ message }` | Host left; game ends after 30-second grace period |
+| `TAB_SWITCH_WARNING` | `{ message }` | 1st or 2nd tab-switch warning |
+| `TAB_SWITCH_PENALTY` | `{ message, deduction, totalScore }` | 3rd+ offense: −5 pts per incident |
 | `ERROR` | `{ message }` | General error message |
 
 ---
@@ -267,15 +288,15 @@ The app will be available at `http://localhost:5173`.
 ## 🧮 Scoring Formula
 
 ```
-streak = consecutive correct answers (auto-incremented in Redis)
-streakMultiplier = min(streak, 3)          // max 3×
-timeFraction = timeLeft / 20               // 1.0 = answered instantly
-pointsEarned = round(basePoints × streakMultiplier × timeFraction)
+streak          = consecutive correct answers (stored in Redis)
+streakMultiplier = min(streak, 3)           // capped at 3×
+timeFraction    = timeLeft / 20             // 1.0 = answered instantly
+pointsEarned    = round(basePoints × streakMultiplier × timeFraction)
 ```
 
 - **Base points**: 100 per question
-- **Max possible**: 100 × 3 × 1 = **300 points** per question (instant answer, 3× streak)
-- **Wrong answer**: streak resets to 0
+- **Max possible**: 100 × 3 × 1.0 = **300 points** per question (instant answer, 3× streak)
+- **Wrong answer**: streak resets to 0, 0 points earned
 
 ---
 
@@ -284,13 +305,19 @@ pointsEarned = round(basePoints × streakMultiplier × timeFraction)
 | Feature | Implementation |
 |---------|---------------|
 | Tab switch detection | `visibilitychange` event → `TAB_SWITCH_DETECTED` socket event |
-| Tab switch penalty | 1st offense: warning; 2nd+: -50 pts |
-| Answer lock | Redis `SADD quiz:answered:{roomCode}:{qIndex} userId` — prevents double submit |
-| Time validation | Server tracks `questionStartTime`; rejects implausible `timeLeft` values |
+| Progressive penalties | 1st offense: warning; 2nd offense: final warning; 3rd+: −5 pts per incident |
+| Answer lock | Redis `SADD quiz:answered:{roomCode}:{qIndex} userId` — prevents double-submit |
+| Time validation | Server tracks `questionStartTime`; rejects `timeLeft` values > server time + 2s tolerance |
+| Host disconnect | 30-second grace period before game auto-ends if host drops |
 
 ---
 
 ## 🔑 API Endpoints
+
+### System
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/health` | Public | Server health check (returns `{ status, timestamp }`) |
 
 ### Auth
 | Method | Endpoint | Auth | Description |

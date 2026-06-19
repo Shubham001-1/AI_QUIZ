@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../App';
 import useSocket from '../hooks/useSocket';
@@ -21,6 +21,7 @@ const GAME_PHASES = {
 const Host = () => {
   const { user, token } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { isConnected, on, off, emit, removeAllListeners } = useSocket();
 
   const [phase, setPhase] = useState(GAME_PHASES.SETUP);
@@ -41,6 +42,21 @@ const Host = () => {
   const [error, setError] = useState('');
   const [startError, setStartError] = useState('');
   const [finalLeaderboard, setFinalLeaderboard] = useState([]);
+
+  // Bootstrap from Quiz Builder publish
+  useEffect(() => {
+    const state = location.state;
+    if (state?.fromBuilder && state?.roomCode) {
+      setRoomCode(state.roomCode);
+      setQuizId(state.quizId || '');
+      setTopic(state.topic || 'Custom Quiz');
+      setQuestions(state.questions || []);
+      setPhase(GAME_PHASES.LOBBY);
+      // Clear location state to avoid re-triggering on refresh
+      window.history.replaceState({}, '');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Register socket listeners
   useEffect(() => {

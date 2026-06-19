@@ -1,5 +1,5 @@
 import Quiz from '../models/Quiz.js';
-import { generateQuestions } from '../services/geminiService.js';
+import { generateQuestions, generateQuestionsN, aiAssistChat } from '../services/geminiService.js';
 
 const generateRoomCode = () => {
   return Math.random().toString(36).slice(2, 8).toUpperCase();
@@ -157,4 +157,114 @@ const getQuizHistory = async (req, res) => {
   }
 };
 
-export { generateQuiz, getQuiz, getQuizHistory };
+// ── Builder: generate N cells without saving ─────────────────────────────────
+const aiGenerateCells = async (req, res) => {
+  try {
+    let { topic, difficulty, count } = req.body;
+
+    if (!topic || typeof topic !== 'string' || topic.trim().length === 0) {
+      return res.status(400).json({ success: false, message: 'Topic is required.' });
+    }
+    if (topic.trim().length > 200) {
+      return res.status(400).json({ success: false, message: 'Topic must be under 200 characters.' });
+    }
+
+    difficulty = ['medium', 'hard'].includes((difficulty || '').toLowerCase().trim())
+      ? difficulty.toLowerCase().trim()
+      : 'medium';
+
+    const safeCount = Math.max(1, Math.min(20, parseInt(count) || 5));
+    const questions = await generateQuestionsN(topic.trim(), difficulty, safeCount);
+
+    return res.status(200).json({ success: true, questions });
+  } catch (error) {
+    console.error('aiGenerateCells error:', error.message);
+    return res.status(500).json({ success: false, message: error.message || 'Failed to generate questions.' });
+  }
+};
+
+// ── Builder: publish a fully edited quiz ──────────────────────────────────────
+const publishQuiz = async (req, res) => {
+  try {
+    const { topic, questions } = req.body;
+
+    if (!topic || typeof topic !== 'string' || topic.trim().length === 0) {
+      return res.status(400).json({ success: false, message: 'Topic is required.' });
+    }
+    if (!Array.isArray(questions) || questions.length === 0) {
+      return res.status(400).json({ success: false, message: 'At least one question is required.' });
+    }
+    if (questions.length > 50) {
+      return res.status(400).json({ success: false, message: 'Maximum 50 questions allowed.' });
+    }
+
+    // Validate each question
+    for (let i = 0; i < questions.length; i++) {
+      const q = questions[i];
+      if (!q.questionText || typeof q.questionText !== 'string' || q.questionText.trim().length === 0) {
+        return res.status(400).json({ success: false, message: `Question ${i + 1} is missing question text.` });
+      }
+      if (!Array.isArray(q.options) || q.options.length !== 4) {
+        return res.status(400).json({ success: false, message: `Question ${i + 1} must have exactly 4 options.` });
+      }
+      if (q.options.some((o) => typeof o !== 'string' || o.trim().length === 0)) {
+        return res.status(400).json({ success: false, message: `Question ${i + 1} has empty options.` });
+      }
+      if (typeof q.correctOptionIndex !== 'number' || q.correctOptionIndex < 0 || q.correctOptionIndex > 3) {
+        return res.status(400).json({ success: false, message: `Question ${i + 1} has an invalid correct answer.` });
+      }
+    }
+
+    const roomCode = await generateUniqueRoomCode();
+
+    const normalised = questions.map((q) => ({
+      questionText: q.questionText.trim(),
+      options: q.options.map((o) => o.trim()),
+      correctOptionIndex: q.correctOptionIndex,
+      points: Math.max(10, Math.min(1000, parseInt(q.points) || 100)),
+    }));
+
+    const quiz = new Quiz({
+      topic: topic.trim(),
+      roomCode,
+      hostId: req.user.userId,
+      status: 'lobby',
+      questions: normalised,
+    });
+
+    await quiz.save();
+
+    return res.status(201).json({
+      success: true,
+      message: 'Quiz published successfully.',
+      roomCode,
+      quizId: quiz._id,
+      questionCount: normalised.length,
+    });
+  } catch (error) {
+    console.error('publishQuiz error:', error.message);
+    return res.status(500).json({ success: false, message: error.message || 'Failed to publish quiz.' });
+  }
+};
+
+// ── Builder: AI companion free-form chat ──────────────────────────────────────
+const aiAssist = async (req, res) => {
+  try {
+    const { prompt, context } = req.body;
+
+    if (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0) {
+      return res.status(400).json({ success: false, message: 'Prompt is required.' });
+    }
+    if (prompt.trim().length > 1000) {
+      return res.status(400).json({ success: false, message: 'Prompt must be under 1000 characters.' });
+    }
+
+    const reply = await aiAssistChat(prompt.trim(), context || '');
+    return res.status(200).json({ success: true, reply });
+  } catch (error) {
+    console.error('aiAssist error:', error.message);
+    return res.status(500).json({ success: false, message: error.message || 'AI assistant failed.' });
+  }
+};
+
+export { generateQuiz, getQuiz, getQuizHistory, aiGenerateCells, publishQuiz, aiAssist };

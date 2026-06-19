@@ -31,6 +31,14 @@ const Home = () => {
     }
   };
 
+  const handleBuilderClick = () => {
+    if (isAuthenticated) {
+      navigate('/builder');
+    } else {
+      navigate('/login', { state: { from: '/builder' } });
+    }
+  };
+
   return (
     <div className="page-container">
       {/* Hero Section */}
@@ -69,6 +77,17 @@ const Home = () => {
             >
               <span className="relative z-10 flex items-center gap-2">
                 🎯 Host a Quiz
+              </span>
+              <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            </button>
+
+            <button
+              id="build-quiz-btn"
+              onClick={handleBuilderClick}
+              className="group relative px-8 py-4 bg-gradient-to-r from-purple-700 to-brand-700 rounded-2xl text-white font-display font-bold text-lg shadow-2xl shadow-purple-500/20 hover:shadow-purple-500/40 hover:scale-105 transition-all duration-300 overflow-hidden border border-purple-500/30"
+            >
+              <span className="relative z-10 flex items-center gap-2">
+                ✏️ Build Custom Quiz
               </span>
               <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             </button>
@@ -120,6 +139,11 @@ const Home = () => {
               description="Enter any topic and Gemini AI instantly generates 10 perfectly crafted questions with 4 options each."
             />
             <FeatureCard
+              icon="🧪"
+              title="Quiz Builder"
+              description="Build quizzes cell-by-cell like a Colab notebook — write manually, generate with AI, or mix both. Edit everything before hosting."
+            />
+            <FeatureCard
               icon="⚡"
               title="Real-Time Gameplay"
               description="Lightning-fast Socket.io ensures all players see questions and scores simultaneously with zero lag."
@@ -138,11 +162,6 @@ const Home = () => {
               icon="🛡️"
               title="Anti-Cheat System"
               description="Tab switch detection, answer lock, and time validation keep the game fair for everyone."
-            />
-            <FeatureCard
-              icon="🎉"
-              title="Epic Game End"
-              description="Confetti, medals, and a full final leaderboard make every game ending feel like a celebration."
             />
           </div>
         </div>
@@ -195,7 +214,13 @@ const Home = () => {
                   onClick={handleHostClick}
                   className="btn-primary text-base px-8 py-4 rounded-2xl font-display font-bold"
                 >
-                  🎯 Host for Free
+                  🎯 Host with AI
+                </button>
+                <button
+                  onClick={handleBuilderClick}
+                  className="text-base px-8 py-4 rounded-2xl font-display font-bold text-white border border-purple-500/40 bg-purple-700/20 hover:bg-purple-700/40 transition-all duration-200"
+                >
+                  ✏️ Build Custom Quiz
                 </button>
                 <Link to="/play" className="btn-secondary text-base px-8 py-4 rounded-2xl font-display font-bold text-center">
                   🎮 Join a Game

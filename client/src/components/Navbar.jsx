@@ -48,6 +48,18 @@ const Navbar = () => {
                 Host Quiz
               </Link>
             )}
+            {isAuthenticated && (
+              <Link
+                to="/builder"
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  isActive('/builder')
+                    ? 'text-white bg-purple-500/20 border border-purple-500/30'
+                    : 'text-purple-300/80 hover:text-purple-200 hover:bg-purple-500/10'
+                }`}
+              >
+                ✏️ Builder
+              </Link>
+            )}
             <Link
               to="/play"
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${

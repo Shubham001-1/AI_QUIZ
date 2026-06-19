@@ -126,4 +126,118 @@ const generateQuestions = async (topic, difficulty = 'medium') => {
   throw new Error(`Gemini question generation failed: ${lastError?.message}`);
 };
 
-export { generateQuestions };
+const generateQuestionsN = async (topic, difficulty = 'medium', count = 10) => {
+  const safeCount = Math.max(1, Math.min(20, parseInt(count) || 10));
+  const ai = getGenAI();
+
+  let difficultyDesc = 'moderate / medium-difficulty questions (no easy, basic, or trivial questions)';
+  if (difficulty === 'hard') {
+    difficultyDesc = 'advanced, difficult, and highly challenging questions (absolutely no easy, simple, or basic questions)';
+  }
+
+  const prompt = `You are a quiz question generator. Return ONLY a valid JSON array with no markdown, no backticks, no explanation. Each element must have exactly these fields: { "questionText": string, "options": [string, string, string, string], "correctOptionIndex": number (0-3), "points": 100 }. Generate exactly ${safeCount} ${difficultyDesc} about: ${topic}`;
+
+  let lastError;
+
+  for (const modelName of MODEL_CANDIDATES) {
+    try {
+      const model = ai.getGenerativeModel({
+        model: modelName,
+        generationConfig: {
+          responseMimeType: 'application/json',
+          temperature: 0.7,
+        },
+      });
+
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      let text = response.text();
+
+      text = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+
+      const firstBracket = text.indexOf('[');
+      const lastBracket = text.lastIndexOf(']');
+      if (firstBracket !== -1 && lastBracket !== -1) {
+        text = text.slice(firstBracket, lastBracket + 1);
+      }
+
+      let questions;
+      try {
+        questions = JSON.parse(text);
+      } catch (parseError) {
+        throw new Error(`Failed to parse response as JSON: ${parseError.message}`);
+      }
+
+      if (!Array.isArray(questions)) throw new Error('Response is not a JSON array');
+
+      // Validate and normalise
+      questions.forEach((q, index) => {
+        if (!q.questionText || typeof q.questionText !== 'string') {
+          throw new Error(`Question ${index + 1} is missing questionText`);
+        }
+        if (!Array.isArray(q.options) || q.options.length !== 4) {
+          throw new Error(`Question ${index + 1} must have exactly 4 options`);
+        }
+        if (q.options.some((opt) => typeof opt !== 'string')) {
+          throw new Error(`Question ${index + 1} has non-string options`);
+        }
+        if (
+          typeof q.correctOptionIndex !== 'number' ||
+          q.correctOptionIndex < 0 ||
+          q.correctOptionIndex > 3
+        ) {
+          throw new Error(`Question ${index + 1} has invalid correctOptionIndex`);
+        }
+        if (typeof q.points !== 'number') q.points = 100;
+      });
+
+      console.log(`✅ ${questions.length} questions generated with model: ${modelName}`);
+      return questions;
+    } catch (err) {
+      const isModelNotFound =
+        err.message.includes('not found') ||
+        err.message.includes('404') ||
+        err.message.includes('not supported');
+      const isQuotaExceeded =
+        err.message.includes('429') ||
+        err.message.includes('Too Many Requests') ||
+        err.message.includes('quota') ||
+        err.message.includes('RESOURCE_EXHAUSTED');
+
+      console.warn(`Model ${modelName} failed: ${err.message.slice(0, 120)}`);
+      lastError = err;
+      if (!isModelNotFound && !isQuotaExceeded) break;
+    }
+  }
+
+  throw new Error(`Gemini generation failed: ${lastError?.message}`);
+};
+
+// Free-form AI assistant call (returns plain text)
+const aiAssistChat = async (prompt, context = '') => {
+  const ai = getGenAI();
+
+  const systemPrompt = `You are an expert quiz designer AI assistant. You help hosts create engaging, accurate, and well-structured quiz questions.${context ? `\n\nContext about the current quiz: ${context}` : ''}\n\nUser message: ${prompt}`;
+
+  for (const modelName of MODEL_CANDIDATES) {
+    try {
+      const model = ai.getGenerativeModel({
+        model: modelName,
+        generationConfig: { temperature: 0.8 },
+      });
+      const result = await model.generateContent(systemPrompt);
+      return result.response.text();
+    } catch (err) {
+      const skip =
+        err.message.includes('not found') ||
+        err.message.includes('404') ||
+        err.message.includes('429') ||
+        err.message.includes('quota') ||
+        err.message.includes('RESOURCE_EXHAUSTED');
+      if (!skip) throw err;
+    }
+  }
+  throw new Error('AI assistant unavailable — all models failed.');
+};
+
+export { generateQuestions, generateQuestionsN, aiAssistChat };

@@ -6,6 +6,7 @@ import Login from './pages/Login';
 import Host from './pages/Host';
 import Play from './pages/Play';
 import Leaderboard from './pages/Leaderboard';
+import QuizBuilder from './pages/QuizBuilder';
 import Navbar from './components/Navbar';
 
 // Auth Context
@@ -86,6 +87,14 @@ const App = () => {
               element={
                 <ProtectedRoute>
                   <Host />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/builder"
+              element={
+                <ProtectedRoute>
+                  <QuizBuilder />
                 </ProtectedRoute>
               }
             />
