@@ -32,6 +32,12 @@ const gameHandlers = (io, socket) => {
           questions: quiz.questions,
           quizId: quiz._id,
           status: 'lobby',
+          stats: quiz.questions.map(q => ({
+            questionText: q.questionText,
+            options: q.options,
+            counts: [0, 0, 0, 0],
+            totalAnswers: 0,
+          })),
         };
         await redisService.initLeaderboard(roomCode);
         console.log(`Host ${userName} created room ${roomCode}`);
@@ -46,7 +52,10 @@ const gameHandlers = (io, socket) => {
         nickname: p.nickname,
       }));
 
-      socket.emit('ROOM_JOINED', { roomCode, players });
+      const currentQuestionIdx = roomState[roomCode].currentQuestionIndex;
+      const completedStats = roomState[roomCode].stats ? roomState[roomCode].stats.slice(0, currentQuestionIdx) : [];
+
+      socket.emit('ROOM_JOINED', { roomCode, players, allStats: completedStats });
     } catch (error) {
       console.error('HOST_JOIN_ROOM error:', error.message);
       socket.emit('ERROR', { message: 'Failed to join room' });
@@ -87,6 +96,12 @@ const gameHandlers = (io, socket) => {
           questions: quiz.questions,
           quizId: quiz._id,
           status: 'lobby',
+          stats: quiz.questions.map(q => ({
+            questionText: q.questionText,
+            options: q.options,
+            counts: [0, 0, 0, 0],
+            totalAnswers: 0,
+          })),
         };
       }
 
@@ -190,6 +205,12 @@ const gameHandlers = (io, socket) => {
 
       // Mark as answered (anti-cheat)
       await redisService.markAnswered(roomCode, questionIndex, userId);
+
+      // Track statistics
+      if (room.stats && room.stats[questionIndex] && typeof selectedOption === 'number' && selectedOption >= 0 && selectedOption < 4) {
+        room.stats[questionIndex].counts[selectedOption] += 1;
+        room.stats[questionIndex].totalAnswers += 1;
+      }
 
       const question = room.questions[questionIndex];
       const isCorrect = selectedOption === question.correctOptionIndex;
@@ -374,7 +395,14 @@ const sendNextQuestion = (io, roomCode) => {
       io.to(roomCode).emit('TIME_UP', {
         correctOptionIndex: question.correctOptionIndex,
         questionIndex: room.currentQuestionIndex,
+        stats: room.stats[room.currentQuestionIndex],
+        allStats: room.stats.slice(0, room.currentQuestionIndex + 1),
       });
+
+      // Automatically advance to the next question or end game after 8 seconds of show time
+      room.timer = setTimeout(() => {
+        sendNextQuestion(io, roomCode);
+      }, 8000);
     } catch (err) {
       console.error('TIME_UP emit error:', err.message);
     }

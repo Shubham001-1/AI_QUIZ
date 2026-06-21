@@ -13,6 +13,7 @@ const QuestionCard = ({
   selectedOption,
   correctOptionIndex,
   timeUp,
+  alwaysShowCorrect = false,
 }) => {
   const [timeLeft, setTimeLeft] = useState(timeLimit);
   const [timerWidth, setTimerWidth] = useState(100);
@@ -55,6 +56,9 @@ const QuestionCard = ({
   };
 
   const getOptionStyle = (index) => {
+    if (alwaysShowCorrect && index === correctOptionIndex) {
+      return 'bg-gradient-to-r from-emerald-600 to-emerald-500 ring-2 ring-emerald-400 ring-offset-2 ring-offset-transparent';
+    }
     if (!answered && !timeUp) {
       return OPTION_CLASSES[index];
     }
@@ -131,7 +135,7 @@ const QuestionCard = ({
             <span className="text-sm sm:text-base leading-snug">{option}</span>
 
             {/* Correct/Wrong indicator */}
-            {(timeUp || answered) && index === correctOptionIndex && (
+            {(timeUp || answered || alwaysShowCorrect) && index === correctOptionIndex && (
               <span className="ml-auto text-lg">✓</span>
             )}
             {answered && index === selectedOption && index !== correctOptionIndex && (

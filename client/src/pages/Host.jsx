@@ -42,6 +42,8 @@ const Host = () => {
   const [error, setError] = useState('');
   const [startError, setStartError] = useState('');
   const [finalLeaderboard, setFinalLeaderboard] = useState([]);
+  const [quizStats, setQuizStats] = useState([]);
+  const [showPlayersList, setShowPlayersList] = useState(false);
 
   // Bootstrap from Quiz Builder publish
   useEffect(() => {
@@ -60,8 +62,11 @@ const Host = () => {
 
   // Register socket listeners
   useEffect(() => {
-    const handleRoomJoined = ({ roomCode: rc, players: p }) => {
+    const handleRoomJoined = ({ roomCode: rc, players: p, allStats }) => {
       setPlayers(p || []);
+      if (allStats) {
+        setQuizStats(allStats);
+      }
     };
 
     const handlePlayerJoined = ({ players: p }) => {
@@ -81,9 +86,12 @@ const Host = () => {
       setPhase(GAME_PHASES.ACTIVE);
     };
 
-    const handleTimeUp = ({ correctOptionIndex: coi }) => {
+    const handleTimeUp = ({ correctOptionIndex: coi, allStats }) => {
       setTimeUp(true);
       setCorrectOptionIndex(coi);
+      if (allStats) {
+        setQuizStats(allStats);
+      }
       setPhase(GAME_PHASES.BETWEEN);
     };
 
@@ -195,6 +203,7 @@ const Host = () => {
     setQuestions([]);
     setPlayers([]);
     setLeaderboard([]);
+    setQuizStats([]);
     setCurrentQuestion(null);
     setQuestionIndex(-1);
     setError('');
@@ -382,29 +391,147 @@ const Host = () => {
 
   // ACTIVE / BETWEEN Phase
   if (phase === GAME_PHASES.ACTIVE || phase === GAME_PHASES.BETWEEN) {
-    const isLastQuestion = questionIndex >= totalQuestions - 1;
+    const progressPercent = totalQuestions > 0 ? ((questionIndex + 1) / totalQuestions) * 100 : 0;
 
     return (
-      <div className="min-h-screen pt-20 px-4 pb-8">
-        <div className="max-w-6xl mx-auto">
+      <div className="min-h-screen pt-20 px-4 pb-12 bg-[#090714] text-white">
+        <div className="max-w-7xl mx-auto space-y-6">
+          
+          {/* ── Admin Dashboard stats header ── */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {/* Card 1: Quiz Title */}
+            <div className="glass-card p-4 flex items-center gap-3 bg-white/[0.02] border-white/10 shadow-lg shadow-black/10">
+              <div className="w-10 h-10 rounded-xl bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-xl">
+                📝
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-white/40 text-[10px] uppercase font-bold tracking-wider leading-none mb-1">Topic</p>
+                <h4 className="text-sm font-semibold truncate leading-tight">{topic}</h4>
+                <p className="text-[11px] text-white/50 capitalize font-medium">{difficulty} mode</p>
+              </div>
+            </div>
+
+            {/* Card 2: Room Code */}
+            <div className="glass-card p-4 flex items-center gap-3 bg-white/[0.02] border-white/10 shadow-lg shadow-black/10">
+              <div className="w-10 h-10 rounded-xl bg-brand-600/20 border border-brand-500/30 flex items-center justify-center text-xl">
+                🔑
+              </div>
+              <div className="flex-1">
+                <p className="text-white/40 text-[10px] uppercase font-bold tracking-wider leading-none mb-1">Room Code</p>
+                <div className="flex items-center gap-2">
+                  <h4 className="text-md font-black tracking-widest leading-none font-mono text-brand-300">{roomCode}</h4>
+                  <button 
+                    onClick={handleCopyRoomCode}
+                    className="text-[10px] text-white/30 hover:text-white/70 bg-white/5 border border-white/10 px-1.5 py-0.5 rounded transition-all font-sans font-normal"
+                  >
+                    {copySuccess ? 'Copied' : 'Copy'}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Card 3: Connected Players */}
+            <div 
+              onClick={() => setShowPlayersList(!showPlayersList)}
+              className={`glass-card p-4 flex items-center gap-3 bg-white/[0.02] border-white/10 shadow-lg shadow-black/10 cursor-pointer hover:bg-white/[0.06] transition-all relative select-none ${showPlayersList ? 'z-[60]' : 'z-10'}`}
+            >
+              <div className="w-10 h-10 rounded-xl bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center text-xl flex-shrink-0">
+                👥
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-white/40 text-[10px] uppercase font-bold tracking-wider leading-none mb-1">Live Players</p>
+                <div className="flex items-center gap-1.5 leading-none mb-1">
+                  <h4 className="text-md font-bold text-white leading-none">{players.length} Active</h4>
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                </div>
+                <p className="text-[10px] text-brand-300 font-medium">Click to view list</p>
+              </div>
+
+              {/* Popup Box for Players List */}
+              {showPlayersList && (
+                <div 
+                  onClick={(e) => e.stopPropagation()}
+                  className="absolute top-full mt-2 left-0 right-0 z-[70] glass-card p-3 bg-[#16122f] border border-white/20 shadow-2xl rounded-xl"
+                >
+                  <div className="flex justify-between items-center border-b border-white/10 pb-1.5 mb-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-white/50">Participants</span>
+                    <button 
+                      onClick={() => setShowPlayersList(false)}
+                      className="text-white/40 hover:text-white text-[10px] font-sans font-bold"
+                    >
+                      ✕ Close
+                    </button>
+                  </div>
+                  
+                  {players.length === 0 ? (
+                    <p className="text-center py-4 text-white/30 text-xs">No players yet.</p>
+                  ) : (
+                    <div className="overflow-y-auto max-h-[108px] space-y-1.5 pr-1 scrollbar-thin">
+                      {players.map((p, idx) => (
+                        <div key={p.userId || idx} className="flex items-center gap-2 px-2 py-1.5 bg-white/5 rounded-lg border border-white/[0.03]">
+                          <div className="w-5 h-5 rounded-full bg-brand-500/20 text-brand-300 text-[10px] font-bold flex items-center justify-center">
+                            {idx + 1}
+                          </div>
+                          <span className="text-xs text-white/80 font-medium truncate">{p.nickname}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Card 4: Quiz Progress */}
+            <div className="glass-card p-4 flex flex-col justify-center bg-white/[0.02] border-white/10 shadow-lg shadow-black/10">
+              <div className="flex justify-between items-center text-[10px] uppercase font-bold tracking-wider text-white/40 mb-1.5">
+                <span>Quiz Progress</span>
+                <span className="text-brand-300 font-mono">Q{questionIndex + 1}/{totalQuestions}</span>
+              </div>
+              <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-brand-500 to-purple-500 rounded-full transition-all duration-300" style={{ width: `${progressPercent}%` }} />
+              </div>
+            </div>
+          </div>
+
+          {/* ── Main Dashboard 3-Column Layout ── */}
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            {/* Main question area */}
-            <div className="lg:col-span-3 space-y-5">
-              {/* Host controls bar */}
-              <div className="glass-card px-5 py-3 flex items-center justify-between">
-                <div className="text-white/60 text-sm">
-                  Hosting: <span className="text-white font-semibold">{topic}</span>
-                  {' · '}Room <span className="text-brand-400 font-bold">{roomCode}</span>
+            
+            {/* Column 1: Live Leaderboard (Left) */}
+            <div className="lg:col-span-1">
+              <LiveLeaderboard leaderboard={leaderboard} currentUserId={user?.id} />
+            </div>
+
+            {/* Column 2: Active Question Area (Center) */}
+            <div className="lg:col-span-2 space-y-4">
+              
+              {/* Controls & Status Bar */}
+              <div className="glass-card px-5 py-3.5 flex items-center justify-between bg-white/[0.03] border-white/10 shadow-lg">
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-brand-500 animate-ping" />
+                  <span className="text-xs font-semibold tracking-wide text-brand-300 uppercase">
+                    Admin Console
+                  </span>
+                </div>
+                <div className="text-xs text-white/50 font-medium">
+                  {timeUp ? (
+                    <span className="text-amber-400 animate-pulse flex items-center gap-1.5">
+                      ⏳ Auto-advancing in a few seconds...
+                    </span>
+                  ) : (
+                    <span className="text-emerald-400 flex items-center gap-1.5">
+                      🟢 Live: Players are answering
+                    </span>
+                  )}
                 </div>
                 <button
                   onClick={handleEndGame}
-                  className="btn-danger text-xs py-2 px-4"
+                  className="bg-red-500/10 hover:bg-red-500/20 active:scale-95 text-red-400 text-xs font-bold py-1.5 px-4 rounded-xl border border-red-500/20 hover:border-red-500/40 transition-all cursor-pointer"
                 >
                   End Game
                 </button>
               </div>
 
-              {/* Question Card (read-only for host) */}
+              {/* Question Card (always show correct answer for Admin) */}
               {currentQuestion && (
                 <div className="relative">
                   <QuestionCard
@@ -412,48 +539,93 @@ const Host = () => {
                     questionIndex={questionIndex}
                     totalQuestions={totalQuestions}
                     timeLimit={20}
-                    onAnswer={() => {}} // host doesn't answer
+                    onAnswer={() => {}} // Host doesn't submit answers
                     answered={false}
                     selectedOption={null}
-                    correctOptionIndex={timeUp ? correctOptionIndex : null}
+                    correctOptionIndex={questions[questionIndex]?.correctOptionIndex}
+                    alwaysShowCorrect={true}
                     timeUp={timeUp}
                   />
-                  {/* Host overlay */}
-                  <div className="absolute inset-0 rounded-xl cursor-not-allowed" title="You're the host — you don't answer" />
+                  {/* Host Overlay block */}
+                  <div className="absolute inset-0 rounded-xl cursor-not-allowed z-10" />
                 </div>
               )}
+            </div>
 
-              {/* Between-question controls */}
-              {(phase === GAME_PHASES.BETWEEN || timeUp) && (
-                <div className="glass-card p-5 text-center animate-slide-up">
-                  <p className="text-white/60 text-sm mb-4">
-                    {isLastQuestion ? "That's the last question!" : 'Ready for the next question?'}
-                  </p>
-                  {isLastQuestion ? (
-                    <button
-                      id="end-game-btn"
-                      onClick={handleEndGame}
-                      className="btn-primary py-3 px-8 font-display font-bold flex items-center gap-2 mx-auto"
-                    >
-                      🏆 Show Final Results
-                    </button>
+            {/* Column 3: Stats history panel (Right) */}
+            <div className="lg:col-span-1">
+              <div className="glass-card p-5 h-full flex flex-col bg-white/[0.03] border-white/10 shadow-lg min-h-[400px]">
+                <h3 className="font-display font-bold text-white text-sm uppercase tracking-wider mb-4 flex items-center gap-2 border-b border-white/10 pb-3">
+                  📊 Question Stats
+                </h3>
+                
+                <div className="space-y-4 overflow-y-auto pr-1 flex-1 max-h-[500px] lg:max-h-[600px] scrollbar-thin">
+                  {quizStats.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-48 text-center text-white/20">
+                      <span className="text-3xl mb-2">📈</span>
+                      <p className="text-xs">Stats for each completed question will appear here.</p>
+                    </div>
                   ) : (
-                    <button
-                      id="next-question-btn"
-                      onClick={handleNextQuestion}
-                      className="btn-primary py-3 px-8 font-display font-bold flex items-center gap-2 mx-auto"
-                    >
-                      Next Question →
-                    </button>
+                    [...quizStats].reverse().map((stat, reversedIdx) => {
+                      // Correctly compute original index since we reversed the array to show latest first
+                      const originalIdx = quizStats.length - 1 - reversedIdx;
+                      const letters = ['A', 'B', 'C', 'D'];
+                      const colors = [
+                        'bg-gradient-to-r from-red-600 to-red-500', 
+                        'bg-gradient-to-r from-blue-600 to-blue-500', 
+                        'bg-gradient-to-r from-amber-600 to-amber-500', 
+                        'bg-gradient-to-r from-emerald-600 to-emerald-500'
+                      ];
+                      
+                      return (
+                        <div key={originalIdx} className="bg-white/[0.02] rounded-xl p-3 border border-white/5 space-y-3">
+                          <div className="flex justify-between items-start gap-1">
+                            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-brand-500/20 text-brand-300 font-mono">
+                              Q{originalIdx + 1}
+                            </span>
+                            <span className="text-[9px] text-white/30 font-medium font-mono">
+                              {stat.totalAnswers} Player{stat.totalAnswers !== 1 ? 's' : ''}
+                            </span>
+                          </div>
+                          
+                          <p className="text-xs text-white/80 font-medium leading-normal line-clamp-2">
+                            {stat.questionText}
+                          </p>
+                          
+                          <div className="space-y-2 pt-1">
+                            {stat.counts.map((cnt, oIdx) => {
+                              const percentage = stat.totalAnswers > 0 
+                                ? Math.round((cnt / stat.totalAnswers) * 100) 
+                                : 0;
+                              
+                              const isCorrect = oIdx === questions[originalIdx]?.correctOptionIndex;
+                              
+                              return (
+                                <div key={oIdx} className="space-y-1">
+                                  <div className="flex items-center justify-between text-[10px]">
+                                    <span className={`font-semibold ${isCorrect ? 'text-emerald-400' : 'text-white/50'}`}>
+                                      Option {letters[oIdx]} {isCorrect && '✓'}
+                                    </span>
+                                    <span className="text-white/70 font-mono">{percentage}% ({cnt})</span>
+                                  </div>
+                                  <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                                    <div 
+                                      className={`h-full ${colors[oIdx]} rounded-full`}
+                                      style={{ width: `${percentage}%` }}
+                                    />
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })
                   )}
                 </div>
-              )}
+              </div>
             </div>
 
-            {/* Sidebar: Leaderboard */}
-            <div className="lg:col-span-1">
-              <LiveLeaderboard leaderboard={leaderboard} currentUserId={user?.id} />
-            </div>
           </div>
         </div>
       </div>
