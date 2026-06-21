@@ -44,6 +44,35 @@ const Host = () => {
   const [finalLeaderboard, setFinalLeaderboard] = useState([]);
   const [quizStats, setQuizStats] = useState([]);
   const [showPlayersList, setShowPlayersList] = useState(false);
+  const [savedQuizzes, setSavedQuizzes] = useState([]);
+  const [pastQuizzes, setPastQuizzes] = useState([]);
+  const [activeTab, setActiveTab] = useState('saved'); // 'saved' or 'history'
+  const [fetchingSaved, setFetchingSaved] = useState(false);
+
+  const fetchSavedQuizzes = useCallback(async () => {
+    if (!user?.id) return;
+    setFetchingSaved(true);
+    try {
+      const { data } = await axios.get(`${API_URL}/api/quiz/history/${user.id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (data.success) {
+        setSavedQuizzes(data.quizzes.filter((q) => q.status === 'saved'));
+        setPastQuizzes(data.quizzes.filter((q) => q.status === 'finished'));
+      }
+    } catch (err) {
+      console.error('Failed to fetch saved quizzes', err);
+    } finally {
+      setFetchingSaved(false);
+    }
+  }, [user?.id, token]);
+
+  // Fetch saved quizzes on mount and when phase resets to SETUP
+  useEffect(() => {
+    if (phase === GAME_PHASES.SETUP) {
+      fetchSavedQuizzes();
+    }
+  }, [phase, fetchSavedQuizzes]);
 
   // Bootstrap from Quiz Builder publish
   useEffect(() => {
@@ -210,6 +239,59 @@ const Host = () => {
     removeAllListeners();
   };
 
+  const handleHostSaved = async (quizId) => {
+    try {
+      const { data } = await axios.post(
+        `${API_URL}/api/quiz/host-saved`,
+        { quizId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (data.success) {
+        setRoomCode(data.roomCode);
+        setQuizId(data.quizId);
+        setTopic(data.topic);
+        setQuestions(data.questions);
+        setPhase(GAME_PHASES.LOBBY);
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to host saved quiz.');
+    }
+  };
+
+  const handleEditSaved = (quiz) => {
+    // Navigate to builder, passing the quiz data in state
+    // We need to fetch the full quiz since the history endpoint excludes questions
+    axios.get(`${API_URL}/api/quiz/${quiz.roomCode}`)
+      .then(({ data }) => {
+        if (data.success) {
+          navigate('/builder', {
+            state: {
+              quizId: data.quiz._id,
+              topic: data.quiz.topic,
+              questions: data.quiz.questions,
+            }
+          });
+        }
+      })
+      .catch((err) => {
+        alert('Failed to load quiz details for editing.');
+      });
+  };
+
+  const handleDeleteSaved = async (quizId) => {
+    if (!window.confirm('Are you sure you want to delete this saved quiz?')) return;
+    try {
+      const { data } = await axios.delete(`${API_URL}/api/quiz/${quizId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (data.success) {
+        fetchSavedQuizzes();
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to delete saved quiz.');
+    }
+  };
+
   // SETUP Phase
   if (phase === GAME_PHASES.SETUP || phase === GAME_PHASES.GENERATING) {
     return (
@@ -219,95 +301,121 @@ const Host = () => {
           <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-accent-600/10 rounded-full blur-3xl" />
         </div>
 
-        <div className="relative w-full max-w-lg animate-slide-up">
-          <div className="glass-card p-8">
-            <div className="text-center mb-8">
-              <div className="text-5xl mb-4">{phase === GAME_PHASES.GENERATING ? '🤖' : '🎯'}</div>
-              <h1 className="font-display font-black text-3xl text-white mb-2">
-                {phase === GAME_PHASES.GENERATING ? 'AI is working...' : 'Create Your Quiz'}
-              </h1>
-              <p className="text-white/50 text-sm">
-                {phase === GAME_PHASES.GENERATING
-                  ? 'Gemini is generating 10 questions. This takes a few seconds.'
-                  : 'Enter a topic and let AI generate 10 questions for your game.'}
-              </p>
-            </div>
+        <div className="relative w-full max-w-2xl animate-slide-up">
+          
+          <div className="flex flex-col sm:flex-row items-center justify-between mb-8 gap-4">
+            <h1 className="font-display font-black text-3xl text-white">
+              Your Quizzes
+            </h1>
+            <button
+              onClick={() => navigate('/builder')}
+              className="bg-gradient-to-r from-brand-600 to-purple-600 hover:from-brand-500 hover:to-purple-500 text-white font-bold py-2.5 px-5 rounded-xl transition-all shadow-lg shadow-brand-500/20 flex items-center gap-2"
+            >
+              <span>+</span> Build New Quiz
+            </button>
+          </div>
 
-            {phase === GAME_PHASES.GENERATING ? (
-              <div className="text-center py-8">
-                <div className="spinner mx-auto mb-4" style={{ width: 56, height: 56 }} />
-                <p className="text-white/50 text-sm animate-pulse">Generating questions about "{topic}"...</p>
+          <div className="flex items-center gap-2 mb-6 p-1 bg-white/5 rounded-xl w-fit">
+            <button
+              onClick={() => setActiveTab('saved')}
+              className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all ${activeTab === 'saved' ? 'bg-white/10 text-white shadow-sm' : 'text-white/50 hover:text-white/80 hover:bg-white/5'}`}
+            >
+              Saved Templates
+            </button>
+            <button
+              onClick={() => setActiveTab('history')}
+              className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all ${activeTab === 'history' ? 'bg-white/10 text-white shadow-sm' : 'text-white/50 hover:text-white/80 hover:bg-white/5'}`}
+            >
+              Past Games
+            </button>
+          </div>
+
+          <div className="glass-card p-6 min-h-[300px]">
+            {fetchingSaved ? (
+              <div className="flex flex-col items-center justify-center h-48">
+                <div className="w-8 h-8 border-2 border-brand-400/30 border-t-brand-400 rounded-full animate-spin mb-4" />
+                <p className="text-white/50 text-sm">Loading your quizzes...</p>
               </div>
+            ) : activeTab === 'saved' ? (
+              savedQuizzes.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-48 text-center px-4">
+                  <div className="text-5xl mb-4 opacity-50">📂</div>
+                  <h3 className="text-white font-semibold text-lg mb-2">No saved templates</h3>
+                  <p className="text-white/40 text-sm max-w-xs mx-auto">
+                    You haven't saved any quizzes yet. Click "Build New Quiz" to get started!
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {savedQuizzes.map((quiz) => (
+                    <div key={quiz._id} className="bg-white/5 border border-white/10 p-4 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between hover:bg-white/10 transition gap-4">
+                      <div className="min-w-0 flex-1 w-full pr-4">
+                        <h3 className="text-white font-semibold text-lg truncate" title={quiz.topic}>{quiz.topic}</h3>
+                        <p className="text-white/40 text-xs mt-1">{quiz.questionCount} Questions · Saved on {new Date(quiz.createdAt).toLocaleDateString()}</p>
+                      </div>
+                      <div className="flex items-center gap-2 w-full sm:w-auto flex-shrink-0">
+                        <button
+                          onClick={() => handleHostSaved(quiz._id)}
+                          className="flex-1 sm:flex-none bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-300 text-sm font-semibold px-4 py-2 rounded-lg transition"
+                          title="Host Now"
+                        >
+                          🚀 Host
+                        </button>
+                        <button
+                          onClick={() => handleEditSaved(quiz)}
+                          className="flex-1 sm:flex-none bg-white/10 hover:bg-white/20 border border-white/20 text-white text-sm font-medium px-4 py-2 rounded-lg transition"
+                          title="Edit in Builder"
+                        >
+                          ✏️ Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteSaved(quiz._id)}
+                          className="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-sm font-medium px-3 py-2 rounded-lg transition"
+                          title="Delete Quiz"
+                        >
+                          🗑
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )
             ) : (
-              <form onSubmit={handleGenerateQuiz} className="space-y-5">
-                {error && (
-                  <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
-                    <p className="text-red-400 text-sm text-center">{error}</p>
-                  </div>
-                )}
-
-                <div>
-                  <label className="block text-white/60 text-sm font-medium mb-1.5">Quiz Topic</label>
-                  <input
-                    id="quiz-topic-input"
-                    type="text"
-                    value={topic}
-                    onChange={(e) => {
-                      setTopic(e.target.value);
-                      if (topicError) setTopicError('');
-                    }}
-                    placeholder="e.g. Python basics, World War II, Marvel Movies..."
-                    className="input-field text-lg py-4"
-                    required
-                    autoFocus
-                    maxLength={200}
-                  />
-                  {topicError && <p className="text-red-400 text-xs mt-1">{topicError}</p>}
-                  <p className="text-white/30 text-xs mt-1">{topic.length}/200 characters</p>
+              // Past Games Tab
+              pastQuizzes.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-48 text-center px-4">
+                  <div className="text-5xl mb-4 opacity-50">🏆</div>
+                  <h3 className="text-white font-semibold text-lg mb-2">No past games yet</h3>
+                  <p className="text-white/40 text-sm max-w-xs mx-auto">
+                    Host a quiz to completion to see your game history here!
+                  </p>
                 </div>
-
-                <div>
-                  <label className="block text-white/60 text-sm font-medium mb-1.5">Difficulty Level</label>
-                  <select
-                    id="quiz-difficulty-select"
-                    value={difficulty}
-                    onChange={(e) => setDifficulty(e.target.value)}
-                    className="input-field text-lg py-4 bg-[#1e1a35] text-white appearance-none cursor-pointer"
-                    style={{ backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>")`, backgroundPosition: 'right 16px center', backgroundRepeat: 'no-repeat', backgroundSize: '16px' }}
-                  >
-                    <option value="medium" className="bg-[#0a0814]">Medium (Standard Challenge)</option>
-                    <option value="hard" className="bg-[#0a0814]">Hard (Difficult / Challenging)</option>
-                  </select>
+              ) : (
+                <div className="space-y-3">
+                  {pastQuizzes.map((quiz) => (
+                    <div key={quiz._id} className="bg-white/5 border border-white/10 p-4 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between hover:bg-white/10 transition gap-4">
+                      <div className="min-w-0 flex-1 w-full pr-4">
+                        <h3 className="text-white font-semibold text-lg truncate" title={quiz.topic}>{quiz.topic}</h3>
+                        <p className="text-white/40 text-xs mt-1">Played on {new Date(quiz.createdAt).toLocaleDateString()} · {quiz.finalLeaderboard?.length || 0} Players</p>
+                      </div>
+                      <div className="flex items-center gap-2 w-full sm:w-auto flex-shrink-0">
+                        <button
+                          onClick={() => navigate('/leaderboard', { state: { finalLeaderboard: quiz.finalLeaderboard, isHost: true } })}
+                          className="flex-1 sm:flex-none bg-white/10 hover:bg-white/20 border border-white/20 text-white text-sm font-medium px-4 py-2 rounded-lg transition"
+                          title="View Leaderboard"
+                        >
+                          🏅 Results
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-
-                <button
-                  id="generate-quiz-btn"
-                  type="submit"
-                  className="btn-primary w-full py-4 text-base font-display font-bold flex items-center justify-center gap-2"
-                >
-                  🤖 Generate Quiz with AI
-                </button>
-
-                <div className="relative flex py-1 items-center justify-center">
-                  <div className="w-1/3 border-t border-white/10"></div>
-                  <span className="mx-4 text-white/30 text-xs uppercase tracking-wider">or</span>
-                  <div className="w-1/3 border-t border-white/10"></div>
-                </div>
-
-                <button
-                  id="manual-quiz-btn"
-                  type="button"
-                  onClick={() => navigate('/builder')}
-                  className="btn-secondary w-full py-4 text-base font-display font-bold flex items-center justify-center gap-2 hover:bg-white/15"
-                >
-                  ✍️ Build Custom Quiz Manually
-                </button>
-              </form>
+              )
             )}
           </div>
 
           {/* Connection status */}
-          <div className={`mt-4 flex items-center justify-center gap-2 text-xs ${isConnected ? 'text-emerald-400' : 'text-red-400'}`}>
+          <div className={`mt-6 flex items-center justify-center gap-2 text-xs ${isConnected ? 'text-emerald-400' : 'text-red-400'}`}>
             <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-emerald-400' : 'bg-red-400'} animate-pulse`} />
             {isConnected ? 'Connected to server' : 'Connecting...'}
           </div>

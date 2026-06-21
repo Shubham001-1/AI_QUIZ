@@ -215,29 +215,39 @@ const publishQuiz = async (req, res) => {
       }
     }
 
-    const roomCode = await generateUniqueRoomCode();
-
     const normalised = questions.map((q) => ({
       questionText: q.questionText.trim(),
       options: q.options.map((o) => o.trim()),
-      correctOptionIndex: q.correctOptionIndex,
+      correctOptionIndex: parseInt(q.correctOptionIndex, 10),
       points: Math.max(10, Math.min(1000, parseInt(q.points) || 100)),
     }));
 
-    const quiz = new Quiz({
-      topic: topic.trim(),
-      roomCode,
-      hostId: req.user.userId,
-      status: 'lobby',
-      questions: normalised,
-    });
-
-    await quiz.save();
+    let quiz;
+    if (req.body.quizId) {
+      quiz = await Quiz.findOneAndUpdate(
+        { _id: req.body.quizId, hostId: req.user.userId },
+        { topic: topic.trim(), questions: normalised, status: 'lobby' },
+        { new: true }
+      );
+      if (!quiz) {
+        return res.status(404).json({ success: false, message: 'Quiz not found or unauthorized.' });
+      }
+    } else {
+      const roomCode = await generateUniqueRoomCode();
+      quiz = new Quiz({
+        topic: topic.trim(),
+        roomCode,
+        hostId: req.user.userId,
+        status: 'lobby',
+        questions: normalised,
+      });
+      await quiz.save();
+    }
 
     return res.status(201).json({
       success: true,
       message: 'Quiz published successfully.',
-      roomCode,
+      roomCode: quiz.roomCode,
       quizId: quiz._id,
       questionCount: normalised.length,
     });
@@ -267,4 +277,111 @@ const aiAssist = async (req, res) => {
   }
 };
 
-export { generateQuiz, getQuiz, getQuizHistory, aiGenerateCells, publishQuiz, aiAssist };
+// ── Builder: save a quiz without hosting ──────────────────────────────────────
+const saveQuiz = async (req, res) => {
+  try {
+    const { quizId, topic, questions } = req.body;
+
+    if (!topic || typeof topic !== 'string' || topic.trim().length === 0) {
+      return res.status(400).json({ success: false, message: 'Topic is required.' });
+    }
+    if (!Array.isArray(questions) || questions.length === 0) {
+      return res.status(400).json({ success: false, message: 'At least one question is required.' });
+    }
+
+    const normalised = questions.map((q) => ({
+      questionText: q.questionText.trim(),
+      options: q.options.map((o) => o.trim()),
+      correctOptionIndex: q.correctOptionIndex,
+      points: Math.max(10, Math.min(1000, parseInt(q.points) || 100)),
+    }));
+
+    let quiz;
+    if (quizId) {
+      // Update existing quiz
+      quiz = await Quiz.findOneAndUpdate(
+        { _id: quizId, hostId: req.user.userId },
+        { topic: topic.trim(), questions: normalised, status: 'saved' },
+        { new: true }
+      );
+      if (!quiz) {
+        return res.status(404).json({ success: false, message: 'Quiz not found or unauthorized.' });
+      }
+    } else {
+      // Create new saved quiz
+      const roomCode = await generateUniqueRoomCode();
+      quiz = new Quiz({
+        topic: topic.trim(),
+        roomCode,
+        hostId: req.user.userId,
+        status: 'saved',
+        questions: normalised,
+      });
+      await quiz.save();
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Quiz saved successfully.',
+      quizId: quiz._id,
+      roomCode: quiz.roomCode,
+    });
+  } catch (error) {
+    console.error('saveQuiz error:', error.message);
+    return res.status(500).json({ success: false, message: error.message || 'Failed to save quiz.' });
+  }
+};
+
+// ── Builder/Dashboard: Host a saved quiz ──────────────────────────────────────
+const hostSavedQuiz = async (req, res) => {
+  try {
+    const { quizId } = req.body;
+    if (!quizId) {
+      return res.status(400).json({ success: false, message: 'Quiz ID is required.' });
+    }
+
+    const quiz = await Quiz.findOneAndUpdate(
+      { _id: quizId, hostId: req.user.userId },
+      { status: 'lobby' },
+      { new: true }
+    );
+
+    if (!quiz) {
+      return res.status(404).json({ success: false, message: 'Quiz not found or unauthorized.' });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Quiz is now in lobby.',
+      quizId: quiz._id,
+      roomCode: quiz.roomCode,
+      topic: quiz.topic,
+      questions: quiz.questions,
+    });
+  } catch (error) {
+    console.error('hostSavedQuiz error:', error.message);
+    return res.status(500).json({ success: false, message: error.message || 'Failed to host quiz.' });
+  }
+};
+
+// ── Dashboard: Delete a saved quiz ──────────────────────────────────────────
+const deleteQuiz = async (req, res) => {
+  try {
+    const { quizId } = req.params;
+    if (!quizId) {
+      return res.status(400).json({ success: false, message: 'Quiz ID is required.' });
+    }
+
+    const quiz = await Quiz.findOneAndDelete({ _id: quizId, hostId: req.user.userId });
+    if (!quiz) {
+      return res.status(404).json({ success: false, message: 'Quiz not found or unauthorized.' });
+    }
+
+    return res.status(200).json({ success: true, message: 'Quiz deleted successfully.' });
+  } catch (error) {
+    console.error('deleteQuiz error:', error.message);
+    return res.status(500).json({ success: false, message: error.message || 'Failed to delete quiz.' });
+  }
+};
+
+export { generateQuiz, getQuiz, getQuizHistory, aiGenerateCells, publishQuiz, aiAssist, saveQuiz, hostSavedQuiz, deleteQuiz };

@@ -53,7 +53,7 @@ const quizSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['lobby', 'active', 'finished'],
+    enum: ['saved', 'lobby', 'active', 'finished'],
     default: 'lobby',
   },
   questions: [questionSchema],

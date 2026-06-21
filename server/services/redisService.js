@@ -68,8 +68,8 @@ const calculateAndAddScore = async (roomCode, userId, basePoints, timeLeft, isCo
     return { pointsEarned: 0, totalScore, streak: 0 };
   }
 
-  // Award exactly 5 points for correct answers
-  const pointsEarned = 5;
+  // Award the manually assigned base points
+  const pointsEarned = basePoints;
   const totalScore = await addScore(roomCode, userId, pointsEarned);
 
   // Increment streak in Redis

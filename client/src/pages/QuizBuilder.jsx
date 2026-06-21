@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../App';
 import AICompanion from '../components/AICompanion';
@@ -48,7 +48,29 @@ const QuizBuilder = () => {
 
   // Publish state
   const [publishing, setPublishing] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [publishError, setPublishError] = useState('');
+  const [quizId, setQuizId] = useState(null);
+  const location = useLocation();
+
+  // Load from state if editing
+  useEffect(() => {
+    if (location.state?.topic && location.state?.questions) {
+      setTopic(location.state.topic);
+      setQuizId(location.state.quizId || null);
+      
+      const loadedCells = location.state.questions.map((q) => ({
+        id: newCellId(),
+        questionText: q.questionText,
+        options: q.options,
+        correctOptionIndex: q.correctOptionIndex,
+        points: q.points || 100,
+        isGenerating: false,
+        focused: false,
+      }));
+      setCells(loadedCells);
+    }
+  }, [location.state]);
 
   const notebookRef = useRef(null);
 
@@ -205,6 +227,7 @@ const QuizBuilder = () => {
     setPublishing(true);
     try {
       const payload = {
+        quizId,
         topic: topic.trim(),
         questions: cells.map((c) => ({
           questionText: c.questionText.trim(),
@@ -234,6 +257,54 @@ const QuizBuilder = () => {
       setPublishError(err.response?.data?.message || 'Failed to publish. Please try again.');
     } finally {
       setPublishing(false);
+    }
+  };
+
+  // ── Save ───────────────────────────────────────────────────────────────────
+
+  const handleSave = async () => {
+    setPublishError('');
+
+    // Client-side validation
+    for (let i = 0; i < cells.length; i++) {
+      const c = cells[i];
+      if (!c.questionText.trim() || c.options.some((o) => !o.trim())) {
+        setPublishError(`Please complete Question ${i + 1} before saving.`);
+        document.getElementById(`cell-${c.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+    }
+    if (!topic.trim()) {
+      setPublishError('Please set a quiz topic before saving.');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const payload = {
+        quizId,
+        topic: topic.trim(),
+        questions: cells.map((c) => ({
+          questionText: c.questionText.trim(),
+          options: c.options.map((o) => o.trim()),
+          correctOptionIndex: c.correctOptionIndex,
+          points: c.points,
+        })),
+      };
+
+      const { data } = await axios.post(`${API_URL}/api/quiz/save`, payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (data.success) {
+        setQuizId(data.quizId); // update quizId so subsequent saves update the same quiz
+        alert('Quiz saved successfully! You can find it in your dashboard.');
+      }
+    } catch (err) {
+      setPublishError(err.response?.data?.message || 'Failed to save. Please try again.');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -402,24 +473,41 @@ const QuizBuilder = () => {
             </div>
           )}
 
-          <button
-            id="publish-quiz-btn"
-            onClick={handlePublish}
-            disabled={publishing || cells.length === 0}
-            className="btn-success px-10 py-4 text-base font-display font-bold inline-flex items-center gap-2 disabled:opacity-40"
-          >
-            {publishing ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                Publishing...
-              </>
-            ) : (
-              <>🚀 Publish Quiz &amp; Get Room Code</>
-            )}
-          </button>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-2">
+            <button
+              onClick={handleSave}
+              disabled={saving || cells.length === 0}
+              className="bg-white/10 hover:bg-white/20 border border-white/20 px-8 py-3.5 rounded-xl text-base font-display font-bold inline-flex items-center gap-2 disabled:opacity-40 transition-all text-white"
+            >
+              {saving ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>💾 Save Quiz</>
+              )}
+            </button>
 
-          <p className="text-white/25 text-xs mt-3">
-            You'll be taken to the lobby where players can join with your room code.
+            <button
+              id="publish-quiz-btn"
+              onClick={handlePublish}
+              disabled={publishing || cells.length === 0}
+              className="btn-success px-8 py-3.5 text-base font-display font-bold inline-flex items-center gap-2 disabled:opacity-40"
+            >
+              {publishing ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Publishing...
+                </>
+              ) : (
+                <>🚀 Host Now</>
+              )}
+            </button>
+          </div>
+
+          <p className="text-white/25 text-xs mt-4">
+            "Host Now" will take you directly to the lobby where players can join. "Save Quiz" stores it for later.
           </p>
         </div>
       </div>
