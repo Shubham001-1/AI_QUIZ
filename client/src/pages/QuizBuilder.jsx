@@ -280,7 +280,11 @@ const QuizBuilder = () => {
               <input
                 type="number"
                 value={batchCount}
-                onChange={(e) => setBatchCount(Math.max(1, Math.min(20, parseInt(e.target.value) || 1)))}
+                onChange={(e) => setBatchCount(e.target.value)}
+                onBlur={() => {
+                  const parsed = parseInt(batchCount, 10);
+                  setBatchCount(isNaN(parsed) ? 5 : Math.max(1, Math.min(20, parsed)));
+                }}
                 min={1}
                 max={20}
                 className="w-8 bg-transparent text-white text-sm text-center focus:outline-none font-mono"
@@ -325,7 +329,7 @@ const QuizBuilder = () => {
               className={`flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-xl border transition-all duration-200 flex-shrink-0 ${
                 aiPanelOpen
                   ? 'bg-brand-600/30 border-brand-500/50 text-brand-300'
-                  : 'bg-white/8 border-white/20 text-white/70 hover:bg-white/15 hover:text-white'
+                  : 'bg-white/10 border-white/20 text-white/70 hover:bg-white/15 hover:text-white'
               }`}
             >
               ✨ AI
@@ -455,7 +459,7 @@ const QuestionCell = ({
       className={`relative rounded-2xl border transition-all duration-200 ${
         isActive
           ? 'border-brand-500/60 bg-white/[0.06] shadow-lg shadow-brand-500/10'
-          : 'border-white/8 bg-white/[0.03] hover:border-white/15 hover:bg-white/[0.05]'
+          : 'border-white/10 bg-white/[0.03] hover:border-white/15 hover:bg-white/[0.05]'
       }`}
     >
       {/* Left accent bar (Colab-style) */}
@@ -549,7 +553,7 @@ const QuestionCell = ({
         </div>
 
         {/* Footer: correct answer hint + points */}
-        <div className="flex items-center justify-between gap-3 pt-3 border-t border-white/8">
+        <div className="flex items-center justify-between gap-3 pt-3 border-t border-white/10">
           <div className="flex items-center gap-2 text-xs text-white/40">
             <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" />
             Correct: <span className="text-emerald-400 font-semibold ml-0.5">{OPTION_LABELS[cell.correctOptionIndex]}</span>
@@ -561,13 +565,17 @@ const QuestionCell = ({
             <input
               type="number"
               value={cell.points}
-              onChange={(e) => onUpdatePoints(Math.max(10, Math.min(1000, parseInt(e.target.value) || 100)))}
+              onChange={(e) => onUpdatePoints(e.target.value)}
+              onBlur={() => {
+                const parsed = parseInt(cell.points, 10);
+                onUpdatePoints(isNaN(parsed) ? 100 : Math.max(10, Math.min(1000, parsed)));
+              }}
               onClick={(e) => e.stopPropagation()}
               onFocus={onFocus}
               min={10}
               max={1000}
               step={10}
-              className="w-16 bg-white/8 border border-white/15 rounded-lg px-2 py-1 text-white text-xs text-center focus:outline-none focus:border-brand-400/60 font-mono"
+              className="w-16 bg-white/10 border border-white/15 rounded-lg px-2 py-1 text-white text-xs text-center focus:outline-none focus:border-brand-400/60 font-mono"
             />
           </div>
         </div>
@@ -588,7 +596,7 @@ const CellToolbarBtn = ({ onClick, disabled, title, accent, danger, children }) 
         ? 'bg-brand-600/30 border border-brand-500/40 text-brand-300 hover:bg-brand-600/50'
         : danger
         ? 'bg-red-600/20 border border-red-500/30 text-red-400 hover:bg-red-600/40'
-        : 'bg-white/8 border border-white/15 text-white/60 hover:bg-white/15 hover:text-white'
+        : 'bg-white/10 border border-white/15 text-white/60 hover:bg-white/15 hover:text-white'
     }`}
   >
     {children}

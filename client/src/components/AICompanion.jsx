@@ -162,7 +162,7 @@ const AICompanion = ({ isOpen, onClose, quizTopic, cellCount }) => {
                       ? 'bg-brand-600/80 text-white rounded-tr-sm'
                       : msg.isError
                       ? 'bg-red-500/10 border border-red-500/20 text-red-300 rounded-tl-sm'
-                      : 'bg-white/8 border border-white/10 text-white/85 rounded-tl-sm'
+                      : 'bg-white/10 border border-white/10 text-white/85 rounded-tl-sm'
                   }`}
                 >
                   {renderText(msg.text)}
@@ -175,7 +175,7 @@ const AICompanion = ({ isOpen, onClose, quizTopic, cellCount }) => {
                 <div className="w-6 h-6 rounded-full bg-gradient-to-br from-brand-500 to-purple-600 flex items-center justify-center text-xs flex-shrink-0 mt-0.5 mr-2">
                   ✨
                 </div>
-                <div className="bg-white/8 border border-white/10 rounded-2xl rounded-tl-sm px-4 py-3">
+                <div className="bg-white/10 border border-white/10 rounded-2xl rounded-tl-sm px-4 py-3">
                   <div className="flex gap-1 items-center">
                     <div className="w-1.5 h-1.5 bg-brand-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                     <div className="w-1.5 h-1.5 bg-brand-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -194,7 +194,7 @@ const AICompanion = ({ isOpen, onClose, quizTopic, cellCount }) => {
                 key={chip.label}
                 onClick={() => sendMessage(chip.prompt)}
                 disabled={loading}
-                className="text-xs px-2.5 py-1.5 rounded-lg bg-white/8 border border-white/15 text-white/70 hover:bg-white/15 hover:text-white hover:border-brand-500/40 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="text-xs px-2.5 py-1.5 rounded-lg bg-white/10 border border-white/15 text-white/70 hover:bg-white/15 hover:text-white hover:border-brand-500/40 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {chip.label}
               </button>
@@ -216,7 +216,7 @@ const AICompanion = ({ isOpen, onClose, quizTopic, cellCount }) => {
                 placeholder="Ask me anything about your quiz..."
                 disabled={loading}
                 rows={1}
-                className="flex-1 bg-white/8 border border-white/15 rounded-xl px-3 py-2.5 text-white/90 placeholder-white/30 text-sm focus:outline-none focus:border-brand-400/60 focus:ring-1 focus:ring-brand-400/20 resize-none transition-all leading-relaxed disabled:opacity-50"
+                className="flex-1 bg-white/10 border border-white/15 rounded-xl px-3 py-2.5 text-white/90 placeholder-white/30 text-sm focus:outline-none focus:border-brand-400/60 focus:ring-1 focus:ring-brand-400/20 resize-none transition-all leading-relaxed disabled:opacity-50"
                 style={{ minHeight: '40px', maxHeight: '120px' }}
               />
               <button

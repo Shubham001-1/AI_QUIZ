@@ -278,6 +278,21 @@ const Host = () => {
                 >
                   🤖 Generate Quiz with AI
                 </button>
+
+                <div className="relative flex py-1 items-center justify-center">
+                  <div className="w-1/3 border-t border-white/10"></div>
+                  <span className="mx-4 text-white/30 text-xs uppercase tracking-wider">or</span>
+                  <div className="w-1/3 border-t border-white/10"></div>
+                </div>
+
+                <button
+                  id="manual-quiz-btn"
+                  type="button"
+                  onClick={() => navigate('/builder')}
+                  className="btn-secondary w-full py-4 text-base font-display font-bold flex items-center justify-center gap-2 hover:bg-white/15"
+                >
+                  ✍️ Build Custom Quiz Manually
+                </button>
               </form>
             )}
           </div>
