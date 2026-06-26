@@ -192,42 +192,88 @@ const Play = () => {
     emit('SUBMIT_ANSWER', { roomCode, userId, selectedOption: optionIndex, timeLeft });
   };
 
+  const [playMenuOpen, setPlayMenuOpen] = useState(false);
+  // Reusable card class for light theme
+  const cardClass = "bg-surface-container-lowest border border-border-subtle shadow-sm rounded-2xl";
+
   // JOIN Phase
   if (phase === PLAY_PHASES.JOIN) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4 pt-16">
-        <div className="fixed inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-600/15 rounded-full blur-3xl" />
-          <div className="absolute bottom-1/3 left-1/4 w-80 h-80 bg-accent-600/10 rounded-full blur-3xl" />
-        </div>
+      <div className="bg-surface font-body-md text-on-surface min-h-screen flex flex-col">
+        {/* Top Navbar */}
+        <header className="w-full sticky top-0 z-50 bg-surface-container-lowest border-b border-border-subtle shadow-sm">
+          <nav className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 flex items-center justify-between h-16 sm:h-20">
+            <div className="flex items-center gap-6">
+              <a href="/" className="font-headline-lg text-headline-lg font-bold text-primary">QuizMaster</a>
+              <div className="hidden lg:flex items-center gap-6">
+                <a href="/" className="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors duration-200">Home</a>
+                <a href="/builder" className="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors duration-200">Create Quiz</a>
+                <a href="/host" className="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors duration-200">Host Quiz</a>
+                <div className="relative">
+                  <a href="/play" className="font-body-md text-body-md text-primary transition-colors">Join Quiz</a>
+                  <div className="absolute -bottom-2 left-0 w-full h-0.5 bg-primary"></div>
+                </div>
+              </div>
+            </div>
+            <div className="hidden lg:flex items-center gap-4">
+              <button onClick={() => navigate('/login')} className="font-label-bold text-on-surface-variant hover:text-primary transition-colors">Sign In</button>
+              <button onClick={() => navigate('/login')} className="bg-primary-container text-white px-6 py-2 rounded-lg font-label-bold hover:opacity-90 transition-opacity shadow-sm">Join</button>
+            </div>
+            {/* Mobile Hamburger */}
+            <button
+              className="lg:hidden p-2 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors"
+              onClick={() => setPlayMenuOpen(v => !v)}
+              aria-label="Toggle menu"
+            >
+              <span className="material-symbols-outlined">{playMenuOpen ? 'close' : 'menu'}</span>
+            </button>
+          </nav>
+          {playMenuOpen && (
+            <div className="lg:hidden border-t border-border-subtle bg-surface-container-lowest px-4 pb-4 space-y-1 shadow-md">
+              <a href="/" className="block px-4 py-2 rounded-lg text-sm font-medium text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors">Home</a>
+              <a href="/builder" className="block px-4 py-2 rounded-lg text-sm font-medium text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors">Create Quiz</a>
+              <a href="/host" className="block px-4 py-2 rounded-lg text-sm font-medium text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors">Host Quiz</a>
+              <a href="/play" className="block px-4 py-2 rounded-lg text-sm font-medium text-primary bg-primary/10">Join Quiz</a>
+              <div className="pt-3 border-t border-border-subtle flex flex-col gap-2">
+                <button onClick={() => navigate('/login')} className="block text-left px-4 py-2 rounded-lg text-sm font-medium text-on-surface-variant hover:text-primary transition-colors">Sign In</button>
+                <button onClick={() => navigate('/login')} className="block text-left px-4 py-2 rounded-lg text-sm font-semibold bg-primary-container text-white text-center hover:opacity-90 transition-opacity">Join</button>
+              </div>
+            </div>
+          )}
+        </header>
 
-        <div className="relative w-full max-w-md animate-slide-up">
-          <div className="glass-card p-8">
+        <main className="flex-grow flex flex-col items-center justify-center px-4 py-12">
+          <div className={`w-full max-w-lg ${cardClass} p-8 md:p-12 animate-slide-up`}>
+            {/* Card Header */}
             <div className="text-center mb-8">
-              <div className="text-5xl mb-4">🎮</div>
-              <h1 className="font-display font-black text-3xl text-white mb-2">Join a Quiz</h1>
-              <p className="text-white/50 text-sm">Enter the room code from your host</p>
+              <div className="inline-flex items-center justify-center mb-4 w-16 h-16 bg-primary/10 rounded-2xl">
+                <svg className="w-8 h-8 text-primary" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm3-3c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"></path>
+                </svg>
+              </div>
+              <h1 className="text-3xl font-bold text-on-surface mb-2 font-display">Join a Quiz</h1>
+              <p className="text-on-surface-variant">Enter the room code from your host to begin</p>
             </div>
 
-            <form onSubmit={handleJoin} className="space-y-4">
+            <form onSubmit={handleJoin} className="space-y-6">
               {joinError && (
-                <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
-                  <p className="text-red-400 text-sm text-center">{joinError}</p>
+                <div className="p-3 bg-error/10 border border-error/20 rounded-xl">
+                  <p className="text-error text-sm text-center font-medium">{joinError}</p>
                 </div>
               )}
 
-              <div>
-                <label className="block text-white/60 text-sm font-medium mb-1.5">Room Code</label>
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-widest ml-1" htmlFor="room-code">Room Code</label>
                 <input
-                  id="room-code-input"
+                  id="room-code"
                   type="text"
                   value={roomCode}
                   onChange={(e) => {
                     setRoomCode(e.target.value.toUpperCase().slice(0, 6));
                     if (joinError) setJoinError('');
                   }}
-                  placeholder="e.g. AB12CD"
-                  className="input-field text-center text-2xl font-display font-bold tracking-[0.3em] uppercase"
+                  placeholder="E.G. AB12CD"
+                  className="w-full bg-surface border border-border-subtle rounded-xl py-4 px-6 text-2xl font-bold text-center tracking-[0.4em] placeholder:text-on-surface-variant/40 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all uppercase"
                   maxLength={6}
                   required
                   autoFocus
@@ -235,10 +281,10 @@ const Play = () => {
                 />
               </div>
 
-              <div>
-                <label className="block text-white/60 text-sm font-medium mb-1.5">Your Nickname</label>
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-widest ml-1" htmlFor="nickname">Your Nickname</label>
                 <input
-                  id="nickname-input"
+                  id="nickname"
                   type="text"
                   value={nickname}
                   onChange={(e) => {
@@ -246,7 +292,7 @@ const Play = () => {
                     if (joinError) setJoinError('');
                   }}
                   placeholder="e.g. QuizMaster"
-                  className="input-field"
+                  className="w-full bg-surface border border-border-subtle rounded-xl py-4 px-6 text-lg placeholder:text-on-surface-variant/40 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
                   maxLength={20}
                   required
                   autoComplete="off"
@@ -254,28 +300,32 @@ const Play = () => {
               </div>
 
               <button
-                id="join-game-btn"
                 type="submit"
                 disabled={!isConnected}
-                className="btn-primary w-full py-4 text-base font-display font-bold flex items-center justify-center gap-2 mt-2"
+                className="w-full bg-primary-container hover:bg-[#19a463] text-white font-bold py-4 rounded-xl flex items-center justify-center gap-3 shadow-md shadow-primary-container/30 transition-all transform active:scale-[0.98] group disabled:opacity-70 disabled:cursor-not-allowed"
               >
                 {!isConnected ? (
                   <>
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     Connecting...
                   </>
                 ) : (
-                  '🚀 Join Game'
+                  <>
+                    <span className="text-lg">Join Game</span>
+                    <svg className="h-5 w-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                    </svg>
+                  </>
                 )}
               </button>
             </form>
           </div>
 
-          <div className={`mt-4 flex items-center justify-center gap-2 text-xs ${isConnected ? 'text-emerald-400' : 'text-amber-400'}`}>
-            <span className={`w-2 h-2 rounded-full animate-pulse ${isConnected ? 'bg-emerald-400' : 'bg-amber-400'}`} />
-            {isConnected ? 'Connected to server' : 'Connecting to server...'}
+          <div className="mt-8 flex items-center gap-2 text-sm text-on-surface-variant font-medium">
+            <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-primary-container pulse-dot' : 'bg-error'}`}></span>
+            <span>{isConnected ? 'Connected to server' : 'Connecting to server...'}</span>
           </div>
-        </div>
+        </main>
       </div>
     );
   }
@@ -283,34 +333,34 @@ const Play = () => {
   // LOBBY Phase
   if (phase === PLAY_PHASES.LOBBY) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4 pt-16">
+      <div className="bg-surface font-body-md text-on-surface min-h-screen flex items-center justify-center px-4 pt-16">
         <div className="relative w-full max-w-md text-center animate-slide-up">
-          <div className="glass-card p-10">
+          <div className={`${cardClass} p-10`}>
             {/* Pulsing waiting indicator */}
             <div className="relative w-24 h-24 mx-auto mb-6">
-              <div className="absolute inset-0 rounded-full bg-brand-500/20 animate-ping" />
-              <div className="absolute inset-2 rounded-full bg-brand-500/30 animate-ping" style={{ animationDelay: '0.3s' }} />
-              <div className="relative w-24 h-24 rounded-full bg-gradient-to-br from-brand-600 to-brand-500 flex items-center justify-center text-4xl">
+              <div className="absolute inset-0 rounded-full bg-primary/10 animate-ping" />
+              <div className="absolute inset-2 rounded-full bg-primary/20 animate-ping" style={{ animationDelay: '0.3s' }} />
+              <div className="relative w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center text-4xl border border-primary/20">
                 ⏳
               </div>
             </div>
 
-            <h2 className="font-display font-black text-3xl text-white mb-2">You're In!</h2>
-            <p className="text-brand-300 font-bold text-xl mb-1">{nickname}</p>
-            <p className="text-white/50 mb-6">Room: <span className="text-white font-bold tracking-wider">{roomCode}</span></p>
+            <h2 className="font-display font-black text-3xl text-on-surface mb-2">You're In!</h2>
+            <p className="text-primary font-bold text-xl mb-1">{nickname}</p>
+            <p className="text-on-surface-variant mb-6">Room: <span className="text-on-surface font-bold tracking-wider">{roomCode}</span></p>
 
-            <div className="p-4 bg-white/5 rounded-xl mb-6">
-              <p className="text-white/60 text-sm animate-pulse">Waiting for the host to start the game...</p>
+            <div className="p-4 bg-surface rounded-xl mb-6 border border-border-subtle">
+              <p className="text-on-surface-variant text-sm animate-pulse">Waiting for the host to start the game...</p>
             </div>
 
-            <div className="flex items-center justify-center gap-2 text-white/40 text-sm">
-              <span>👥</span>
+            <div className="flex items-center justify-center gap-2 text-on-surface-variant text-sm font-medium">
+              <span className="material-symbols-outlined">group</span>
               <span>{players.length} player{players.length !== 1 ? 's' : ''} in lobby</span>
             </div>
 
             {hostDisconnected && (
-              <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
-                <p className="text-amber-400 text-sm">⚠️ Host disconnected. The game may not start.</p>
+              <div className="mt-6 p-3 bg-error/10 border border-error/20 rounded-xl">
+                <p className="text-error text-sm font-medium">⚠️ Host disconnected. The game may not start.</p>
               </div>
             )}
           </div>
@@ -322,42 +372,42 @@ const Play = () => {
   // ACTIVE Phase
   if (phase === PLAY_PHASES.ACTIVE) {
     return (
-      <div className="min-h-screen pt-20 px-4 pb-8">
+      <div className="bg-surface font-body-md text-on-surface min-h-screen pt-16 sm:pt-20 px-4 pb-8">
         <div className="max-w-5xl mx-auto">
           {/* Notifications */}
           {tabWarning && (
-            <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 p-3 bg-amber-500/90 text-amber-950 rounded-xl font-semibold text-sm shadow-xl animate-slide-down">
+            <div className="fixed top-16 sm:top-20 left-1/2 -translate-x-1/2 z-50 p-3 bg-error/90 text-white rounded-xl font-semibold text-sm shadow-xl animate-slide-down max-w-xs sm:max-w-sm text-center">
               ⚠️ {tabWarning}
             </div>
           )}
 
           {serverError && (
-            <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 p-3 bg-red-500/90 text-white rounded-xl font-semibold text-sm shadow-xl">
+            <div className="fixed top-16 sm:top-20 left-1/2 -translate-x-1/2 z-50 p-3 bg-error/90 text-white rounded-xl font-semibold text-sm shadow-xl max-w-xs sm:max-w-sm text-center">
               ❌ {serverError}
             </div>
           )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
             {/* Main content */}
             <div className="lg:col-span-3 space-y-4">
               {/* Player stats bar */}
-              <div className="glass-card px-5 py-3 flex items-center justify-between">
+              <div className={`${cardClass} px-5 py-3 flex items-center justify-between`}>
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-500 to-accent-500 flex items-center justify-center text-white text-xs font-bold">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary text-xs font-bold">
                     {nickname.charAt(0).toUpperCase()}
                   </div>
-                  <span className="text-white font-semibold text-sm">{nickname}</span>
+                  <span className="text-on-surface font-semibold text-sm">{nickname}</span>
                 </div>
                 <div className="flex items-center gap-4">
                   {myRank && (
                     <div className="text-center">
-                      <p className="text-white/40 text-xs">Rank</p>
-                      <p className="text-white font-bold">#{myRank}</p>
+                      <p className="text-on-surface-variant text-xs">Rank</p>
+                      <p className="text-on-surface font-bold">#{myRank}</p>
                     </div>
                   )}
                   <div className="text-center">
-                    <p className="text-white/40 text-xs">Score</p>
-                    <p className="text-brand-300 font-bold font-display">{Math.round(myScore).toLocaleString()}</p>
+                    <p className="text-on-surface-variant text-xs">Score</p>
+                    <p className="text-primary font-bold font-display">{Math.round(myScore).toLocaleString()}</p>
                   </div>
                 </div>
               </div>
@@ -367,8 +417,8 @@ const Play = () => {
                 <div
                   className={`p-4 rounded-xl text-center animate-bounce-in font-display font-bold ${
                     lastResult.correct
-                      ? 'bg-emerald-500/20 border border-emerald-500/30 text-emerald-300'
-                      : 'bg-red-500/20 border border-red-500/30 text-red-300'
+                      ? 'bg-primary-container/20 border border-primary-container/30 text-primary'
+                      : 'bg-error/10 border border-error/20 text-error'
                   }`}
                 >
                   {lastResult.correct ? (
@@ -396,9 +446,9 @@ const Play = () => {
 
               {/* Waiting banner after answer */}
               {answered && !timeUp && (
-                <div className="glass-card p-5 text-center">
-                  <div className="w-8 h-8 border-2 border-brand-500/30 border-t-brand-500 rounded-full animate-spin mx-auto mb-2" />
-                  <p className="text-white/50 text-sm">Waiting for everyone else to answer...</p>
+                <div className={`${cardClass} p-5 text-center`}>
+                  <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin mx-auto mb-2" />
+                  <p className="text-on-surface-variant text-sm font-medium">Waiting for everyone else to answer...</p>
                 </div>
               )}
             </div>

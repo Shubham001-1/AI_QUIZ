@@ -6,18 +6,6 @@ import AICompanion from '../components/AICompanion';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 const OPTION_LABELS = ['A', 'B', 'C', 'D'];
-const OPTION_COLORS = [
-  'from-red-600/80 to-red-700/80 border-red-500/40',
-  'from-blue-600/80 to-blue-700/80 border-blue-500/40',
-  'from-amber-600/80 to-amber-700/80 border-amber-500/40',
-  'from-emerald-600/80 to-emerald-700/80 border-emerald-500/40',
-];
-const OPTION_COLORS_ACTIVE = [
-  'from-red-500 to-red-600 border-red-400 ring-2 ring-red-400/40',
-  'from-blue-500 to-blue-600 border-blue-400 ring-2 ring-blue-400/40',
-  'from-amber-500 to-amber-600 border-amber-400 ring-2 ring-amber-400/40',
-  'from-emerald-500 to-emerald-600 border-emerald-400 ring-2 ring-emerald-400/40',
-];
 
 let cellIdCounter = 0;
 const newCellId = () => `cell-${++cellIdCounter}`;
@@ -314,12 +302,36 @@ const QuizBuilder = () => {
     (c) => c.questionText.trim() && c.options.every((o) => o.trim())
   ).length;
 
+  // Header Component mapped to light theme
+  const HeaderNav = () => (
+    <header className="w-full sticky top-0 z-50 bg-surface-container-lowest border-b border-border-subtle shadow-sm">
+      <nav className="max-w-container-max mx-auto px-margin-desktop flex items-center justify-between h-16">
+        <div className="flex items-center gap-10">
+          <a href="/" className="font-headline-lg text-headline-lg font-bold text-primary tracking-tight">QuizMaster</a>
+          <div className="hidden lg:flex items-center gap-6">
+            <a href="/" className="font-body-md font-bold text-on-surface-variant hover:text-primary transition-colors duration-200">Home</a>
+            <div className="relative">
+              <a href="/builder" className="font-body-md font-bold text-primary border-b-2 border-primary pb-1">Create Quiz</a>
+            </div>
+            <a href="/host" className="font-body-md font-bold text-on-surface-variant hover:text-primary transition-colors duration-200">Host Quiz</a>
+            <a href="/play" className="font-body-md font-bold text-on-surface-variant hover:text-primary transition-colors duration-200">Join Quiz</a>
+          </div>
+        </div>
+        <div className="flex items-center gap-6">
+          <span className="material-symbols-outlined text-on-surface-variant p-2 hover:bg-surface-container rounded-full transition-colors cursor-pointer">account_circle</span>
+        </div>
+      </nav>
+    </header>
+  );
+
   return (
-    <div className="min-h-screen bg-[#0a0814] pt-16" style={{ paddingRight: aiPanelOpen ? '360px' : '0', transition: 'padding-right 0.3s ease' }}>
+    <div className="min-h-screen bg-surface font-body-md text-on-surface flex flex-col" style={{ paddingRight: aiPanelOpen ? '360px' : '0', transition: 'padding-right 0.3s ease' }}>
+      
+      <HeaderNav />
 
       {/* ── Sticky Toolbar ── */}
-      <div className="sticky top-16 z-30 bg-[#0a0814]/95 backdrop-blur-xl border-b border-white/10 shadow-lg shadow-black/40">
-        <div className="max-w-4xl mx-auto px-4 py-2 flex flex-col gap-2">
+      <div className="sticky top-16 z-30 bg-surface-container-lowest/95 backdrop-blur-xl border-b border-border-subtle shadow-sm">
+        <div className="max-w-4xl mx-auto px-4 py-3 flex flex-col gap-3">
 
           {/* Row 1: Topic + Difficulty — always full width */}
           <div className="flex gap-2 items-center">
@@ -330,24 +342,24 @@ const QuizBuilder = () => {
               onChange={(e) => setTopic(e.target.value)}
               placeholder="Enter quiz topic (e.g. Data Structures, World War II, Marvel Movies)..."
               maxLength={200}
-              className="flex-1 bg-white/5 border border-white/20 rounded-xl px-3 py-2 text-white placeholder-white/30 text-sm focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/20 transition-all"
+              className="flex-1 bg-white border border-border-subtle rounded-xl px-4 py-2.5 text-on-surface placeholder-on-surface-variant/50 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all shadow-sm"
             />
             <select
               value={difficulty}
               onChange={(e) => setDifficulty(e.target.value)}
-              className="bg-white/5 border border-white/20 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-brand-400 cursor-pointer flex-shrink-0"
+              className="bg-white border border-border-subtle rounded-xl px-4 py-2.5 text-on-surface text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 cursor-pointer flex-shrink-0 shadow-sm"
               style={{ backgroundImage: 'none' }}
             >
-              <option value="medium" className="bg-[#0a0814]">Medium</option>
-              <option value="hard" className="bg-[#0a0814]">Hard</option>
+              <option value="medium">Medium</option>
+              <option value="hard">Hard</option>
             </select>
           </div>
 
           {/* Row 2: Actions */}
           <div className="flex items-center gap-2 flex-wrap">
             {/* Batch generate control */}
-            <div className="flex items-center gap-1.5 bg-white/5 border border-white/15 rounded-xl px-3 py-1.5 flex-shrink-0">
-              <span className="text-white/50 text-xs whitespace-nowrap">Generate</span>
+            <div className="flex items-center gap-1.5 bg-white border border-border-subtle rounded-xl px-3 py-1.5 flex-shrink-0 shadow-sm">
+              <span className="text-on-surface-variant font-medium text-xs whitespace-nowrap">Generate</span>
               <input
                 type="number"
                 value={batchCount}
@@ -358,16 +370,16 @@ const QuizBuilder = () => {
                 }}
                 min={1}
                 max={20}
-                className="w-8 bg-transparent text-white text-sm text-center focus:outline-none font-mono"
+                className="w-10 bg-transparent text-primary font-bold text-sm text-center focus:outline-none font-mono"
               />
-              <span className="text-white/50 text-xs">cells</span>
+              <span className="text-on-surface-variant font-medium text-xs">cells</span>
             </div>
 
             <button
               id="batch-generate-btn"
               onClick={handleBatchGenerate}
               disabled={batchGenerating || !topic.trim()}
-              className="flex items-center gap-1.5 bg-gradient-to-r from-purple-700 to-brand-600 text-white text-sm font-semibold px-4 py-2 rounded-xl hover:from-purple-600 hover:to-brand-500 hover:shadow-lg hover:shadow-brand-500/20 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
+              className="flex items-center gap-1.5 bg-primary-container text-white text-sm font-label-bold px-4 py-2 rounded-xl hover:bg-primary transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 shadow-sm"
             >
               {batchGenerating ? (
                 <>
@@ -375,13 +387,13 @@ const QuizBuilder = () => {
                   Generating...
                 </>
               ) : (
-                <>⚡ Generate {batchCount} Cells</>
+                <>✨ Generate {batchCount} Cells</>
               )}
             </button>
 
             <button
               onClick={() => insertCellAt(cells.length)}
-              className="flex items-center gap-1.5 bg-white/10 border border-white/20 text-white text-sm font-semibold px-3 py-2 rounded-xl hover:bg-white/20 transition-all duration-200 flex-shrink-0"
+              className="flex items-center gap-1.5 bg-surface-container border border-border-subtle text-on-surface text-sm font-label-bold px-3 py-2 rounded-xl hover:bg-surface-container-high transition-all duration-200 flex-shrink-0 shadow-sm"
             >
               + Add Cell
             </button>
@@ -389,7 +401,7 @@ const QuizBuilder = () => {
             <div className="flex-1" />
 
             {/* Stats pill */}
-            <div className="text-xs text-white/40 whitespace-nowrap">
+            <div className="text-xs font-label-bold text-on-surface-variant whitespace-nowrap border border-border-subtle px-2 py-1 rounded-lg bg-surface-container">
               {completedCount}/{cells.length} ready
             </div>
 
@@ -397,33 +409,33 @@ const QuizBuilder = () => {
             <button
               id="ai-companion-toggle"
               onClick={() => setAiPanelOpen((o) => !o)}
-              className={`flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-xl border transition-all duration-200 flex-shrink-0 ${
+              className={`flex items-center gap-1.5 text-sm font-label-bold px-3 py-2 rounded-xl border transition-all duration-200 flex-shrink-0 shadow-sm ${
                 aiPanelOpen
-                  ? 'bg-brand-600/30 border-brand-500/50 text-brand-300'
-                  : 'bg-white/10 border-white/20 text-white/70 hover:bg-white/15 hover:text-white'
+                  ? 'bg-primary/10 border-primary text-primary'
+                  : 'bg-white border-border-subtle text-on-surface-variant hover:bg-surface-container-low hover:text-primary'
               }`}
             >
-              ✨ AI
+              ✨ AI Companion
             </button>
           </div>
         </div>
       </div>
 
       {/* ── Main content ── */}
-      <div className="max-w-4xl mx-auto px-4 py-6 pb-40 pt-8">
+      <div className="flex-grow max-w-4xl mx-auto px-4 py-8 pb-40 w-full relative z-10">
 
         {/* Hero header */}
         <div className="text-center mb-8">
-          <h1 className="font-display font-black text-3xl text-white mb-1">
-            🧪 Quiz <span className="bg-gradient-to-r from-brand-400 to-purple-400 bg-clip-text text-transparent">Builder</span>
+          <h1 className="font-display-lg text-display-lg text-on-surface mb-2">
+            Quiz Builder
           </h1>
-          <p className="text-white/40 text-sm">
+          <p className="font-body-lg text-body-lg text-on-surface-variant">
             Build your quiz cell by cell — write manually, generate with AI, or mix both.
           </p>
         </div>
 
         {/* Cells */}
-        <div ref={notebookRef} className="space-y-2">
+        <div ref={notebookRef} className="space-y-4">
 
           {/* First insert divider */}
           <InsertDivider onInsert={() => insertCellAt(0)} />
@@ -451,37 +463,37 @@ const QuizBuilder = () => {
         </div>
 
         {/* Publish section */}
-        <div className="mt-10 glass-card p-6 text-center border border-white/10">
-          <h2 className="font-display font-bold text-xl text-white mb-1">Ready to host?</h2>
-          <p className="text-white/40 text-sm mb-5">
+        <div className="mt-12 bg-surface-container-lowest p-8 rounded-xl border border-border-subtle shadow-sm text-center">
+          <h2 className="font-headline-lg text-headline-lg text-on-surface mb-2">Ready to host?</h2>
+          <p className="text-on-surface-variant font-body-sm mb-6">
             {completedCount < cells.length
               ? `${cells.length - completedCount} question(s) still need text or options filled in.`
               : `All ${cells.length} questions are ready. Publish to get your room code!`}
           </p>
 
           {publishError && (
-            <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
-              <p className="text-red-400 text-sm">{publishError}</p>
+            <div className="mb-6 p-4 bg-error/10 border border-error/20 rounded-xl">
+              <p className="text-error font-medium">{publishError}</p>
             </div>
           )}
 
           {cells.length < 3 && (
-            <div className="mb-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
-              <p className="text-amber-400 text-sm">
+            <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+              <p className="text-amber-800 font-medium">
                 ⚠️ You have fewer than 3 questions. Consider adding more for a better experience.
               </p>
             </div>
           )}
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-2">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <button
               onClick={handleSave}
               disabled={saving || cells.length === 0}
-              className="bg-white/10 hover:bg-white/20 border border-white/20 px-8 py-3.5 rounded-xl text-base font-display font-bold inline-flex items-center gap-2 disabled:opacity-40 transition-all text-white"
+              className="bg-surface border border-border-subtle hover:bg-surface-container px-8 py-3.5 rounded-xl font-label-bold text-on-surface inline-flex items-center gap-2 disabled:opacity-50 transition-all shadow-sm"
             >
               {saving ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
                   Saving...
                 </>
               ) : (
@@ -493,11 +505,11 @@ const QuizBuilder = () => {
               id="publish-quiz-btn"
               onClick={handlePublish}
               disabled={publishing || cells.length === 0}
-              className="btn-success px-8 py-3.5 text-base font-display font-bold inline-flex items-center gap-2 disabled:opacity-40"
+              className="bg-primary-container text-white px-8 py-3.5 rounded-xl font-label-bold inline-flex items-center gap-2 disabled:opacity-50 hover:bg-primary transition-all shadow-md active:scale-95"
             >
               {publishing ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   Publishing...
                 </>
               ) : (
@@ -506,7 +518,7 @@ const QuizBuilder = () => {
             </button>
           </div>
 
-          <p className="text-white/25 text-xs mt-4">
+          <p className="text-on-surface-variant/60 text-xs mt-4">
             "Host Now" will take you directly to the lobby where players can join. "Save Quiz" stores it for later.
           </p>
         </div>
@@ -544,43 +556,45 @@ const QuestionCell = ({
     <div
       id={`cell-${cell.id}`}
       onClick={onFocus}
-      className={`relative rounded-2xl border transition-all duration-200 ${
+      className={`relative rounded-xl border bg-surface-container-lowest transition-all duration-300 overflow-hidden ${
         isActive
-          ? 'border-brand-500/60 bg-white/[0.06] shadow-lg shadow-brand-500/10'
-          : 'border-white/10 bg-white/[0.03] hover:border-white/15 hover:bg-white/[0.05]'
+          ? 'border-primary-container shadow-md'
+          : 'border-border-subtle shadow-sm hover:border-primary-container/50'
       }`}
     >
-      {/* Left accent bar (Colab-style) */}
+      {/* Left accent bar */}
       <div
-        className={`absolute left-0 top-3 bottom-3 w-0.5 rounded-full transition-all duration-200 ${
-          isActive ? 'bg-brand-400' : 'bg-transparent'
+        className={`absolute left-0 top-0 bottom-0 w-1 transition-all duration-300 ${
+          isActive ? 'bg-primary-container' : 'bg-transparent'
         }`}
       />
 
       {/* Loading overlay */}
       {cell.isGenerating && (
-        <div className="absolute inset-0 bg-[#0a0814]/80 rounded-2xl flex items-center justify-center z-10 backdrop-blur-sm">
-          <div className="flex items-center gap-3 text-white/70">
-            <div className="w-5 h-5 border-2 border-brand-400/30 border-t-brand-400 rounded-full animate-spin" />
-            <span className="text-sm font-medium">Generating with AI...</span>
+        <div className="absolute inset-0 bg-surface-container-lowest/80 rounded-xl flex items-center justify-center z-10 backdrop-blur-sm">
+          <div className="flex items-center gap-3 text-primary">
+            <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+            <span className="font-label-bold">Generating with AI...</span>
           </div>
         </div>
       )}
 
-      <div className="p-5">
+      <div className="p-4 md:p-5">
         {/* Cell header */}
         <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-mono text-white/25 select-none">[ ]</span>
-            <span className="text-xs text-white/30 font-medium">Q{index + 1}</span>
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <span className="material-symbols-outlined text-primary text-sm">psychology</span>
+            </div>
+            <span className="text-sm font-label-bold text-on-surface-variant tracking-wider uppercase">Question {index + 1}</span>
           </div>
 
           {/* Cell toolbar */}
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity" style={{ opacity: isActive ? 1 : undefined }}>
-            <CellToolbarBtn onClick={onMoveUp} disabled={index === 0} title="Move up">↑</CellToolbarBtn>
-            <CellToolbarBtn onClick={onMoveDown} disabled={index === total - 1} title="Move down">↓</CellToolbarBtn>
-            <CellToolbarBtn onClick={onGenerateAI} title="Generate with AI" accent>✨</CellToolbarBtn>
-            <CellToolbarBtn onClick={onDelete} disabled={total === 1} title="Delete cell" danger>🗑</CellToolbarBtn>
+          <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity" style={{ opacity: isActive ? 1 : undefined }}>
+            <CellToolbarBtn onClick={onMoveUp} disabled={index === 0} title="Move up" icon="arrow_upward" />
+            <CellToolbarBtn onClick={onMoveDown} disabled={index === total - 1} title="Move down" icon="arrow_downward" />
+            <CellToolbarBtn onClick={onGenerateAI} title="Generate with AI" accent icon="auto_awesome" />
+            <CellToolbarBtn onClick={onDelete} disabled={total === 1} title="Delete cell" danger icon="delete" />
           </div>
         </div>
 
@@ -592,64 +606,64 @@ const QuestionCell = ({
           onFocus={onFocus}
           placeholder="Write your question here..."
           rows={2}
-          className="w-full bg-transparent text-white placeholder-white/25 text-base font-medium resize-none focus:outline-none leading-relaxed mb-4"
-          style={{ minHeight: '52px' }}
+          className="w-full bg-transparent text-on-surface placeholder-on-surface-variant/40 font-headline-md text-headline-md resize-none focus:outline-none mb-3"
+          style={{ minHeight: '48px' }}
         />
 
         {/* Options */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
-          {cell.options.map((opt, i) => (
-            <div
-              key={i}
-              onClick={() => onSetCorrect(i)}
-              className={`group relative flex items-center gap-2.5 rounded-xl border px-3 py-2.5 bg-gradient-to-r cursor-pointer transition-all duration-200 ${
-                cell.correctOptionIndex === i
-                  ? OPTION_COLORS_ACTIVE[i]
-                  : OPTION_COLORS[i] + ' opacity-70 hover:opacity-90'
-              }`}
-            >
-              {/* Option label */}
-              <span className="text-xs font-black text-white/90 select-none w-5 text-center flex-shrink-0">
-                {OPTION_LABELS[i]}
-              </span>
+        <div className="grid grid-cols-1 gap-2.5 mb-3">
+          {cell.options.map((opt, i) => {
+            const isCorrect = cell.correctOptionIndex === i;
+            
+            return (
+              <div
+                key={i}
+                onClick={() => onSetCorrect(i)}
+                className={`group relative flex items-center gap-3 rounded-lg border p-3 cursor-pointer transition-all duration-200 option-button ${
+                  isCorrect
+                    ? 'border-2 border-primary-container bg-primary/5 shadow-md'
+                    : 'border-border-subtle bg-white hover:border-primary-container hover:shadow-md'
+                }`}
+              >
+                {/* Option label (A/B/C/D) */}
+                <span className={`w-6 h-6 rounded-full flex items-center justify-center text-label-sm font-label-bold transition-all flex-shrink-0 ${
+                  isCorrect
+                    ? 'bg-primary-container text-white'
+                    : 'border-2 border-border-subtle text-on-surface-variant group-hover:border-primary-container group-hover:text-primary-container'
+                }`}>
+                  {OPTION_LABELS[i]}
+                </span>
 
-              {/* Correct indicator */}
-              <div className={`w-4 h-4 rounded-full border flex-shrink-0 flex items-center justify-center transition-all ${
-                cell.correctOptionIndex === i
-                  ? 'bg-white border-white'
-                  : 'border-white/50 group-hover:border-white/80'
-              }`}>
-                {cell.correctOptionIndex === i && (
-                  <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                <input
+                  type="text"
+                  value={opt}
+                  onChange={(e) => {
+                    e.stopPropagation();
+                    onUpdateOption(i, e.target.value);
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                  onFocus={onFocus}
+                  placeholder={`Option ${OPTION_LABELS[i]}...`}
+                  className={`flex-1 bg-transparent placeholder-on-surface-variant/40 font-body-md focus:outline-none min-w-0 ${
+                    isCorrect ? 'text-on-surface font-semibold' : 'text-on-surface'
+                  }`}
+                />
+                
+                {/* Checkmark for correct option */}
+                {isCorrect && (
+                  <span className="material-symbols-outlined text-primary-container flex-shrink-0" style={{ fontVariationSettings: "'FILL' 1" }}>
+                    check_circle
+                  </span>
                 )}
               </div>
-
-              <input
-                type="text"
-                value={opt}
-                onChange={(e) => {
-                  e.stopPropagation();
-                  onUpdateOption(i, e.target.value);
-                }}
-                onClick={(e) => e.stopPropagation()}
-                onFocus={onFocus}
-                placeholder={`Option ${OPTION_LABELS[i]}...`}
-                className="flex-1 bg-transparent text-white placeholder-white/40 text-sm focus:outline-none min-w-0"
-              />
-            </div>
-          ))}
+            );
+          })}
         </div>
 
-        {/* Footer: correct answer hint + points */}
-        <div className="flex items-center justify-between gap-3 pt-3 border-t border-white/10">
-          <div className="flex items-center gap-2 text-xs text-white/40">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" />
-            Correct: <span className="text-emerald-400 font-semibold ml-0.5">{OPTION_LABELS[cell.correctOptionIndex]}</span>
-            <span className="text-white/20">— click any option to change</span>
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            <span className="text-white/30 text-xs">pts</span>
+        {/* Footer: points */}
+        <div className="flex justify-end pt-3 border-t border-border-subtle mt-1">
+          <div className="flex items-center gap-2">
+            <span className="text-on-surface-variant font-label-bold text-sm">Points:</span>
             <input
               type="number"
               value={cell.points}
@@ -663,7 +677,7 @@ const QuestionCell = ({
               min={10}
               max={1000}
               step={10}
-              className="w-16 bg-white/10 border border-white/15 rounded-lg px-2 py-1 text-white text-xs text-center focus:outline-none focus:border-brand-400/60 font-mono"
+              className="w-20 bg-surface border border-border-subtle rounded-lg px-3 py-1.5 text-primary font-bold text-sm text-center focus:outline-none focus:border-primary shadow-sm"
             />
           </div>
         </div>
@@ -674,35 +688,36 @@ const QuestionCell = ({
 
 // ── Cell toolbar button ──────────────────────────────────────────────────────
 
-const CellToolbarBtn = ({ onClick, disabled, title, accent, danger, children }) => (
+const CellToolbarBtn = ({ onClick, disabled, title, accent, danger, icon }) => (
   <button
     onClick={(e) => { e.stopPropagation(); onClick(); }}
     disabled={disabled}
     title={title}
-    className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs transition-all duration-150 disabled:opacity-20 disabled:cursor-not-allowed ${
+    className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-150 disabled:opacity-30 disabled:cursor-not-allowed ${
       accent
-        ? 'bg-brand-600/30 border border-brand-500/40 text-brand-300 hover:bg-brand-600/50'
+        ? 'bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20'
         : danger
-        ? 'bg-red-600/20 border border-red-500/30 text-red-400 hover:bg-red-600/40'
-        : 'bg-white/10 border border-white/15 text-white/60 hover:bg-white/15 hover:text-white'
+        ? 'bg-error/10 border border-error/20 text-error hover:bg-error/20'
+        : 'bg-surface border border-border-subtle text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface shadow-sm'
     }`}
   >
-    {children}
+    <span className="material-symbols-outlined text-[18px]">{icon}</span>
   </button>
 );
 
 // ── Insert divider ────────────────────────────────────────────────────────────
 
 const InsertDivider = ({ onInsert }) => (
-  <div className="group flex items-center gap-2 py-0.5">
-    <div className="flex-1 h-px bg-white/0 group-hover:bg-white/10 transition-all duration-200" />
+  <div className="group flex items-center gap-3 py-1 -my-2 relative z-0">
+    <div className="flex-1 h-px bg-transparent group-hover:bg-primary/20 transition-all duration-200" />
     <button
       onClick={onInsert}
-      className="opacity-0 group-hover:opacity-100 flex items-center gap-1 text-xs text-white/50 hover:text-white bg-white/5 hover:bg-white/15 border border-white/10 hover:border-white/25 rounded-full px-2.5 py-0.5 transition-all duration-200 whitespace-nowrap"
+      className="opacity-0 group-hover:opacity-100 flex items-center gap-1 text-xs font-label-bold text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-full px-3 py-1 transition-all duration-200 whitespace-nowrap shadow-sm"
     >
-      + insert cell
+      <span className="material-symbols-outlined text-[14px]">add</span>
+      Insert Question
     </button>
-    <div className="flex-1 h-px bg-white/0 group-hover:bg-white/10 transition-all duration-200" />
+    <div className="flex-1 h-px bg-transparent group-hover:bg-primary/20 transition-all duration-200" />
   </div>
 );
 

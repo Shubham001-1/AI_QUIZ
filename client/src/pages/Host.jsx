@@ -48,6 +48,8 @@ const Host = () => {
   const [pastQuizzes, setPastQuizzes] = useState([]);
   const [activeTab, setActiveTab] = useState('saved'); // 'saved' or 'history'
   const [fetchingSaved, setFetchingSaved] = useState(false);
+  
+  const [showAIGenerator, setShowAIGenerator] = useState(false);
 
   const fetchSavedQuizzes = useCallback(async () => {
     if (!user?.id) return;
@@ -236,6 +238,7 @@ const Host = () => {
     setCurrentQuestion(null);
     setQuestionIndex(-1);
     setError('');
+    setShowAIGenerator(false);
     removeAllListeners();
   };
 
@@ -260,7 +263,6 @@ const Host = () => {
 
   const handleEditSaved = (quiz) => {
     // Navigate to builder, passing the quiz data in state
-    // We need to fetch the full quiz since the history endpoint excludes questions
     axios.get(`${API_URL}/api/quiz/${quiz.roomCode}`)
       .then(({ data }) => {
         if (data.success) {
@@ -292,134 +294,220 @@ const Host = () => {
     }
   };
 
+  // Common Header mapped to light theme for all phases
+  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+  const HeaderNav = () => (
+    <header className="w-full sticky top-0 z-50 bg-surface-container-lowest border-b border-border-subtle shadow-sm">
+      <nav className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 flex items-center justify-between h-16 sm:h-20">
+        <div className="flex items-center gap-6">
+          <a href="/" className="font-headline-lg text-headline-lg font-bold text-primary">QuizMaster</a>
+          <div className="hidden lg:flex items-center gap-6">
+            <a href="/" className="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors duration-200">Home</a>
+            <a href="/builder" className="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors duration-200">Create Quiz</a>
+            <div className="relative">
+              <a href="/host" className="font-body-md text-body-md text-primary transition-colors">Host Quiz</a>
+              <div className="absolute -bottom-2 left-0 w-full h-0.5 bg-primary"></div>
+            </div>
+            <a href="/play" className="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors duration-200">Join Quiz</a>
+          </div>
+        </div>
+        <div className="hidden lg:flex items-center gap-4">
+          <span className="font-body-md font-bold text-on-surface-variant">
+            {user ? user.name : 'Host'}
+          </span>
+        </div>
+        <button
+          className="lg:hidden p-2 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors"
+          onClick={() => setMobileMenuOpen(v => !v)}
+          aria-label="Toggle menu"
+        >
+          <span className="material-symbols-outlined">{mobileMenuOpen ? 'close' : 'menu'}</span>
+        </button>
+      </nav>
+      {mobileMenuOpen && (
+        <div className="lg:hidden border-t border-border-subtle bg-surface-container-lowest px-4 pb-4 space-y-1 shadow-md">
+          <a href="/" className="block px-4 py-2 rounded-lg text-sm font-medium text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors">Home</a>
+          <a href="/builder" className="block px-4 py-2 rounded-lg text-sm font-medium text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors">Create Quiz</a>
+          <a href="/host" className="block px-4 py-2 rounded-lg text-sm font-medium text-primary bg-primary/10">Host Quiz</a>
+          <a href="/play" className="block px-4 py-2 rounded-lg text-sm font-medium text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors">Join Quiz</a>
+          <div className="pt-3 border-t border-border-subtle">
+            <span className="block px-4 py-2 text-sm font-bold text-on-surface-variant">{user ? user.name : 'Host'}</span>
+          </div>
+        </div>
+      )}
+    </header>
+  );
+
   // SETUP Phase
   if (phase === GAME_PHASES.SETUP || phase === GAME_PHASES.GENERATING) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4 pt-16">
-        <div className="fixed inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-brand-600/15 rounded-full blur-3xl" />
-          <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-accent-600/10 rounded-full blur-3xl" />
-        </div>
+      <div className="min-h-screen bg-surface font-body-md text-on-surface flex flex-col">
+        <HeaderNav />
+        <main className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 py-8 sm:py-12 flex-grow w-full animate-slide-up">
+          <section className="mb-8 sm:mb-12">
+            <h1 className="text-2xl sm:text-4xl lg:text-display-lg font-display-lg font-bold text-on-surface mb-2">Host & Manage Your Quizzes</h1>
+            <p className="font-body-lg text-body-lg text-on-surface-variant max-w-2xl text-sm sm:text-base">Create high-impact assessments with AI-powered questions or build custom challenges from scratch to engage your learners.</p>
+          </section>
 
-        <div className="relative w-full max-w-2xl animate-slide-up">
-          
-          <div className="flex flex-col sm:flex-row items-center justify-between mb-8 gap-4">
-            <h1 className="font-display font-black text-3xl text-white">
-              Your Quizzes
-            </h1>
-            <button
-              onClick={() => navigate('/builder')}
-              className="bg-gradient-to-r from-brand-600 to-purple-600 hover:from-brand-500 hover:to-purple-500 text-white font-bold py-2.5 px-5 rounded-xl transition-all shadow-lg shadow-brand-500/20 flex items-center gap-2"
-            >
-              <span>+</span> Build New Quiz
-            </button>
-          </div>
-
-          <div className="flex items-center gap-2 mb-6 p-1 bg-white/5 rounded-xl w-fit">
-            <button
-              onClick={() => setActiveTab('saved')}
-              className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all ${activeTab === 'saved' ? 'bg-white/10 text-white shadow-sm' : 'text-white/50 hover:text-white/80 hover:bg-white/5'}`}
-            >
-              Saved Templates
-            </button>
-            <button
-              onClick={() => setActiveTab('history')}
-              className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all ${activeTab === 'history' ? 'bg-white/10 text-white shadow-sm' : 'text-white/50 hover:text-white/80 hover:bg-white/5'}`}
-            >
-              Past Games
-            </button>
-          </div>
-
-          <div className="glass-card p-6 min-h-[300px]">
-            {fetchingSaved ? (
-              <div className="flex flex-col items-center justify-center h-48">
-                <div className="w-8 h-8 border-2 border-brand-400/30 border-t-brand-400 rounded-full animate-spin mb-4" />
-                <p className="text-white/50 text-sm">Loading your quizzes...</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-8 sm:mb-12">
+            {!showAIGenerator ? (
+              <div 
+                onClick={() => setShowAIGenerator(true)}
+                className="group relative bg-primary-container p-8 rounded-xl border border-primary text-white overflow-hidden cursor-pointer transition-all hover:shadow-lg shadow-sm"
+              >
+                <div className="relative z-10">
+                  <span className="material-symbols-outlined text-4xl mb-4" style={{ fontVariationSettings: "'FILL' 1" }}>auto_awesome</span>
+                  <h3 className="font-headline-lg text-headline-lg mb-2 text-white">Generate with AI</h3>
+                  <p className="font-body-sm text-body-sm text-white/90 mb-6 max-w-sm">Create a full 20-question certification quiz from just a topic in seconds.</p>
+                  <button className="bg-white text-primary px-4 py-2 rounded-lg font-label-bold group-hover:scale-105 transition-transform shadow-sm">Get Started</button>
+                </div>
+                <div className="absolute -right-8 -bottom-8 opacity-10 group-hover:opacity-20 transition-opacity text-white">
+                  <span className="material-symbols-outlined text-[120px]">psychology</span>
+                </div>
               </div>
-            ) : activeTab === 'saved' ? (
-              savedQuizzes.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-48 text-center px-4">
-                  <div className="text-5xl mb-4 opacity-50">📂</div>
-                  <h3 className="text-white font-semibold text-lg mb-2">No saved templates</h3>
-                  <p className="text-white/40 text-sm max-w-xs mx-auto">
-                    You haven't saved any quizzes yet. Click "Build New Quiz" to get started!
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {savedQuizzes.map((quiz) => (
-                    <div key={quiz._id} className="bg-white/5 border border-white/10 p-4 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between hover:bg-white/10 transition gap-4">
-                      <div className="min-w-0 flex-1 w-full pr-4">
-                        <h3 className="text-white font-semibold text-lg truncate" title={quiz.topic}>{quiz.topic}</h3>
-                        <p className="text-white/40 text-xs mt-1">{quiz.questionCount} Questions · Saved on {new Date(quiz.createdAt).toLocaleDateString()}</p>
-                      </div>
-                      <div className="flex items-center gap-2 w-full sm:w-auto flex-shrink-0">
-                        <button
-                          onClick={() => handleHostSaved(quiz._id)}
-                          className="flex-1 sm:flex-none bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-300 text-sm font-semibold px-4 py-2 rounded-lg transition"
-                          title="Host Now"
-                        >
-                          🚀 Host
-                        </button>
-                        <button
-                          onClick={() => handleEditSaved(quiz)}
-                          className="flex-1 sm:flex-none bg-white/10 hover:bg-white/20 border border-white/20 text-white text-sm font-medium px-4 py-2 rounded-lg transition"
-                          title="Edit in Builder"
-                        >
-                          ✏️ Edit
-                        </button>
-                        <button
-                          onClick={() => handleDeleteSaved(quiz._id)}
-                          className="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-sm font-medium px-3 py-2 rounded-lg transition"
-                          title="Delete Quiz"
-                        >
-                          🗑
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )
             ) : (
-              // Past Games Tab
-              pastQuizzes.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-48 text-center px-4">
-                  <div className="text-5xl mb-4 opacity-50">🏆</div>
-                  <h3 className="text-white font-semibold text-lg mb-2">No past games yet</h3>
-                  <p className="text-white/40 text-sm max-w-xs mx-auto">
-                    Host a quiz to completion to see your game history here!
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {pastQuizzes.map((quiz) => (
-                    <div key={quiz._id} className="bg-white/5 border border-white/10 p-4 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between hover:bg-white/10 transition gap-4">
-                      <div className="min-w-0 flex-1 w-full pr-4">
-                        <h3 className="text-white font-semibold text-lg truncate" title={quiz.topic}>{quiz.topic}</h3>
-                        <p className="text-white/40 text-xs mt-1">Played on {new Date(quiz.createdAt).toLocaleDateString()} · {quiz.finalLeaderboard?.length || 0} Players</p>
-                      </div>
-                      <div className="flex items-center gap-2 w-full sm:w-auto flex-shrink-0">
-                        <button
-                          onClick={() => navigate('/leaderboard', { state: { finalLeaderboard: quiz.finalLeaderboard, isHost: true } })}
-                          className="flex-1 sm:flex-none bg-white/10 hover:bg-white/20 border border-white/20 text-white text-sm font-medium px-4 py-2 rounded-lg transition"
-                          title="View Leaderboard"
-                        >
-                          🏅 Results
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )
+              <div className="bg-primary-container p-8 rounded-xl border border-primary text-white shadow-lg relative">
+                <button 
+                  onClick={(e) => { e.stopPropagation(); setShowAIGenerator(false); setTopicError(''); setError(''); }}
+                  className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors"
+                >
+                  <span className="material-symbols-outlined">close</span>
+                </button>
+                <h3 className="font-headline-lg text-headline-lg mb-2 text-white flex items-center gap-2">
+                  <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>auto_awesome</span>
+                  Generate with AI
+                </h3>
+                <form onSubmit={handleGenerateQuiz} className="mt-4 relative z-10">
+                  <div className="mb-4">
+                    <label className="block text-white/90 text-sm font-label-bold mb-2">Quiz Topic</label>
+                    <input 
+                      type="text" 
+                      value={topic}
+                      onChange={(e) => setTopic(e.target.value)}
+                      placeholder="e.g., Intro to LLMs & Prompt Engineering"
+                      className="w-full bg-white text-on-surface border border-transparent rounded-lg py-3 px-4 focus:ring-2 focus:ring-white outline-none placeholder:text-on-surface-variant/40"
+                      disabled={phase === GAME_PHASES.GENERATING}
+                      autoFocus
+                    />
+                    {topicError && <p className="text-error-container text-sm mt-1 font-medium">{topicError}</p>}
+                  </div>
+                  <button 
+                    type="submit" 
+                    disabled={phase === GAME_PHASES.GENERATING}
+                    className="w-full bg-white text-primary px-4 py-3 rounded-lg font-label-bold flex items-center justify-center gap-2 hover:bg-surface-container-lowest transition-colors disabled:opacity-80 disabled:cursor-not-allowed shadow-sm"
+                  >
+                    {phase === GAME_PHASES.GENERATING ? (
+                      <><div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" /> Generating AI Quiz...</>
+                    ) : '✨ Generate 10 Questions'}
+                  </button>
+                </form>
+                {error && <p className="text-error-container text-sm mt-4 text-center font-medium bg-error/20 p-2 rounded-lg">{error}</p>}
+              </div>
             )}
+
+            <div 
+              onClick={() => navigate('/builder')}
+              className="group relative bg-surface-container-lowest p-8 rounded-xl border border-border-subtle cursor-pointer transition-all hover:border-primary hover:shadow-sm"
+            >
+              <span className="material-symbols-outlined text-4xl mb-4 text-primary">edit_note</span>
+              <h3 className="font-headline-lg text-headline-lg mb-2 text-on-surface">Build Manually</h3>
+              <p className="font-body-sm text-body-sm text-on-surface-variant mb-6 max-w-sm">Fine-tune every detail. Best for specific corporate training and niche topics.</p>
+              <button className="border border-border-subtle text-on-surface-variant px-4 py-2 rounded-lg font-label-bold group-hover:text-primary group-hover:border-primary transition-colors shadow-sm bg-surface-container-lowest">Start Building</button>
+            </div>
           </div>
 
-          {/* Connection status */}
-          <div className={`mt-6 flex items-center justify-center gap-2 text-xs ${isConnected ? 'text-emerald-400' : 'text-red-400'}`}>
-            <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-emerald-400' : 'bg-red-400'} animate-pulse`} />
-            {isConnected ? 'Connected to server' : 'Connecting...'}
+          <div className="bg-surface-container-lowest rounded-xl border border-border-subtle overflow-hidden mt-gutter shadow-sm">
+            <div className="px-8 py-6 border-b border-border-subtle flex items-center gap-6 bg-surface-container-lowest">
+              <button
+                onClick={() => setActiveTab('saved')}
+                className={`font-headline-md text-headline-md pb-1 transition-colors ${activeTab === 'saved' ? 'text-on-surface border-b-2 border-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
+              >
+                Saved Templates
+              </button>
+              <button
+                onClick={() => setActiveTab('history')}
+                className={`font-headline-md text-headline-md pb-1 transition-colors ${activeTab === 'history' ? 'text-on-surface border-b-2 border-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
+              >
+                Past Games
+              </button>
+            </div>
+            
+            <div className="divide-y divide-border-subtle bg-surface-container-lowest">
+              {fetchingSaved ? (
+                <div className="p-12 text-center text-on-surface-variant">
+                   <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin mx-auto mb-4" />
+                   <p className="font-medium">Loading your quizzes...</p>
+                </div>
+              ) : activeTab === 'saved' ? (
+                 savedQuizzes.length === 0 ? (
+                    <div className="p-12 text-center text-on-surface-variant">
+                      <span className="material-symbols-outlined text-5xl mb-3 opacity-30">bookmark_border</span>
+                      <p className="font-medium">No saved templates yet.</p>
+                      <p className="text-sm mt-1 opacity-70">Build or generate a quiz to see it here.</p>
+                    </div>
+                 ) : (
+                   savedQuizzes.map((quiz) => (
+                      <div key={quiz._id} className="px-8 py-6 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-surface-container-low transition-colors">
+                        <div className="flex gap-4 items-center">
+                          <div className="w-12 h-12 bg-primary/10 rounded-lg flex flex-shrink-0 items-center justify-center text-primary">
+                            <span className="material-symbols-outlined">terminal</span>
+                          </div>
+                          <div>
+                            <h4 className="font-body-lg text-body-lg font-semibold text-on-surface truncate max-w-sm md:max-w-md lg:max-w-xl">{quiz.topic}</h4>
+                            <div className="flex items-center gap-4 mt-1">
+                              <span className="inline-flex items-center gap-1 bg-surface-variant text-on-surface-variant px-2 py-0.5 rounded text-xs font-label-bold uppercase tracking-wider">Saved</span>
+                              <span className="text-body-sm text-on-surface-variant flex items-center gap-1"><span className="material-symbols-outlined text-sm">format_list_bulleted</span> {quiz.questionCount} Questions</span>
+                              <span className="text-body-sm text-on-surface-variant flex items-center gap-1"><span className="material-symbols-outlined text-sm">event</span> {new Date(quiz.createdAt).toLocaleDateString()}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 flex-shrink-0">
+                          <button onClick={() => handleHostSaved(quiz._id)} className="bg-primary-container text-white px-4 py-2 rounded font-label-bold hover:opacity-90 transition-opacity shadow-sm">Host Now</button>
+                          <button onClick={() => handleEditSaved(quiz)} className="p-2 bg-surface-container-lowest border border-border-subtle text-on-surface-variant hover:bg-surface hover:text-primary rounded transition-colors shadow-sm" title="Edit"><span className="material-symbols-outlined">edit</span></button>
+                          <button onClick={() => handleDeleteSaved(quiz._id)} className="p-2 bg-surface-container-lowest border border-border-subtle text-error hover:bg-error/10 hover:border-error/30 rounded transition-colors shadow-sm" title="Delete"><span className="material-symbols-outlined">delete</span></button>
+                        </div>
+                      </div>
+                   ))
+                 )
+              ) : (
+                pastQuizzes.length === 0 ? (
+                    <div className="p-12 text-center text-on-surface-variant">
+                      <span className="material-symbols-outlined text-5xl mb-3 opacity-30">history</span>
+                      <p className="font-medium">No past games yet.</p>
+                      <p className="text-sm mt-1 opacity-70">Host a game to completion to see your history.</p>
+                    </div>
+                ) : (
+                  pastQuizzes.map((quiz) => (
+                    <div key={quiz._id} className="px-8 py-6 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-surface-container-low transition-colors">
+                      <div className="flex gap-4 items-center">
+                        <div className="w-12 h-12 bg-surface-container-high rounded-lg flex flex-shrink-0 items-center justify-center text-on-surface-variant">
+                          <span className="material-symbols-outlined">database</span>
+                        </div>
+                        <div>
+                          <h4 className="font-body-lg text-body-lg font-semibold text-on-surface truncate max-w-sm md:max-w-md lg:max-w-xl">{quiz.topic}</h4>
+                          <div className="flex items-center gap-4 mt-1">
+                            <span className="inline-flex items-center gap-1 bg-surface-variant text-on-surface-variant px-2 py-0.5 rounded text-xs font-label-bold uppercase tracking-wider">Completed</span>
+                            <span className="text-body-sm text-on-surface-variant flex items-center gap-1"><span className="material-symbols-outlined text-sm">groups</span> {quiz.finalLeaderboard?.length || 0} Participants</span>
+                            <span className="text-body-sm text-on-surface-variant flex items-center gap-1"><span className="material-symbols-outlined text-sm">event</span> {new Date(quiz.createdAt).toLocaleDateString()}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 flex-shrink-0">
+                        <button onClick={() => navigate('/leaderboard', { state: { finalLeaderboard: quiz.finalLeaderboard, isHost: true } })} className="bg-surface border border-border-subtle text-on-surface px-4 py-2 rounded font-label-bold hover:bg-surface-container transition-colors shadow-sm">View Results</button>
+                      </div>
+                    </div>
+                  ))
+                )
+              )}
+            </div>
           </div>
-        </div>
+          
+          {/* Connection status */}
+          <div className="mt-8 flex items-center justify-center gap-2 text-sm font-medium text-on-surface-variant">
+            <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-primary-container pulse-dot' : 'bg-error'}`} />
+            {isConnected ? 'Connected to server' : 'Connecting to server...'}
+          </div>
+        </main>
       </div>
     );
   }
@@ -427,72 +515,77 @@ const Host = () => {
   // LOBBY Phase
   if (phase === GAME_PHASES.LOBBY) {
     return (
-      <div className="min-h-screen pt-20 px-4 pb-8">
-        <div className="max-w-4xl mx-auto">
-          {/* Header */}
-          <div className="text-center mb-8 animate-slide-down">
-            <h1 className="font-display font-black text-4xl text-white mb-2">🎮 Game Lobby</h1>
-            <p className="text-white/50">Share the code — start when everyone's in!</p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Left: Room Code + Controls */}
-            <div className="space-y-5">
-              {/* Room Code Card */}
-              <div className="glass-card p-6 text-center">
-                <p className="text-white/50 text-sm font-medium uppercase tracking-widest mb-3">Room Code</p>
-                <div className="font-display font-black text-6xl sm:text-7xl tracking-[0.2em] text-white mb-4 animate-pulse-glow">
-                  {roomCode}
-                </div>
-                <button
-                  id="copy-room-code-btn"
-                  onClick={handleCopyRoomCode}
-                  className={`btn-secondary text-sm py-2.5 px-6 flex items-center gap-2 mx-auto ${copySuccess ? 'border-emerald-500/50 text-emerald-400' : ''}`}
-                >
-                  {copySuccess ? '✓ Copied!' : '📋 Copy Code'}
-                </button>
-                <p className="text-white/30 text-xs mt-3">Players join at quizai.app/play</p>
-              </div>
-
-              {/* Quiz Info */}
-              <div className="glass-card p-5">
-                <div className="flex items-center gap-3 mb-3">
-                  <span className="text-2xl">📝</span>
-                  <div>
-                    <p className="text-white font-semibold">Topic: {topic}</p>
-                    <p className="text-white/50 text-sm">{questions.length} questions · 20 seconds each</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Start Button */}
-              {startError && (
-                <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
-                  <p className="text-amber-400 text-sm text-center">{startError}</p>
-                </div>
-              )}
-
-              <button
-                id="start-game-btn"
-                onClick={handleStartGame}
-                disabled={players.length === 0}
-                className="btn-success w-full py-4 text-base font-display font-bold flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                🚀 Start Game ({players.length} player{players.length !== 1 ? 's' : ''})
-              </button>
-
-              <button
-                onClick={handleReset}
-                className="btn-secondary w-full py-3 text-sm"
-              >
-                ← Create New Quiz
-              </button>
+      <div className="min-h-screen bg-surface font-body-md text-on-surface flex flex-col">
+        <HeaderNav />
+        <main className="flex-grow flex items-center justify-center px-4 py-8 sm:py-12">
+          <div className="max-w-4xl w-full">
+            {/* Header */}
+            <div className="text-center mb-8 sm:mb-10 animate-slide-down">
+              <h1 className="text-2xl sm:text-4xl lg:text-display-lg font-display-lg font-bold text-on-surface mb-2">🎮 Game Lobby</h1>
+              <p className="text-on-surface-variant text-base sm:text-lg">Share the code — start when everyone's in!</p>
             </div>
 
-            {/* Right: Player List */}
-            <PlayerList players={players} />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+              {/* Left: Room Code + Controls */}
+              <div className="space-y-6">
+                {/* Room Code Card */}
+                <div className="bg-surface-container-lowest border border-border-subtle rounded-2xl p-8 text-center shadow-sm">
+                  <p className="text-on-surface-variant text-sm font-label-bold uppercase tracking-widest mb-4">Room Code</p>
+                  <div className="font-display font-black text-6xl sm:text-7xl tracking-[0.2em] text-primary mb-6 animate-pulse">
+                    {roomCode}
+                  </div>
+                  <button
+                    id="copy-room-code-btn"
+                    onClick={handleCopyRoomCode}
+                    className={`bg-surface border ${copySuccess ? 'border-primary text-primary' : 'border-border-subtle text-on-surface-variant'} py-3 px-8 rounded-lg font-label-bold flex items-center justify-center gap-2 mx-auto hover:bg-surface-container transition-all`}
+                  >
+                    {copySuccess ? '✓ Copied!' : '📋 Copy Code'}
+                  </button>
+                  <p className="text-on-surface-variant/70 text-xs mt-4">Players join at localhost:5173/play</p>
+                </div>
+
+                {/* Quiz Info */}
+                <div className="bg-surface-container-lowest border border-border-subtle rounded-2xl p-6 shadow-sm">
+                  <div className="flex items-center gap-4 mb-2">
+                    <span className="material-symbols-outlined text-primary text-3xl">menu_book</span>
+                    <div>
+                      <p className="text-on-surface font-label-bold">{topic}</p>
+                      <p className="text-on-surface-variant text-sm">{questions.length} questions · 20 seconds each</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Start Button */}
+                {startError && (
+                  <div className="p-4 bg-error/10 border border-error/20 rounded-xl">
+                    <p className="text-error text-sm text-center font-medium">{startError}</p>
+                  </div>
+                )}
+
+                <button
+                  id="start-game-btn"
+                  onClick={handleStartGame}
+                  disabled={players.length === 0}
+                  className="w-full bg-primary-container text-white py-4 rounded-xl text-lg font-label-bold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#19a463] shadow-md transition-colors"
+                >
+                  🚀 Start Game ({players.length} player{players.length !== 1 ? 's' : ''})
+                </button>
+
+                <button
+                  onClick={handleReset}
+                  className="w-full border border-border-subtle text-on-surface-variant py-3 rounded-xl font-label-bold hover:bg-surface-container transition-colors"
+                >
+                  ← Back to Dashboard
+                </button>
+              </div>
+
+              {/* Right: Player List */}
+              <div className="bg-surface-container-lowest border border-border-subtle rounded-2xl shadow-sm overflow-hidden h-64 sm:h-80 lg:h-[600px] flex flex-col">
+                <PlayerList players={players} />
+              </div>
+            </div>
           </div>
-        </div>
+        </main>
       </div>
     );
   }
@@ -502,35 +595,36 @@ const Host = () => {
     const progressPercent = totalQuestions > 0 ? ((questionIndex + 1) / totalQuestions) * 100 : 0;
 
     return (
-      <div className="min-h-screen pt-20 px-4 pb-12 bg-[#090714] text-white">
-        <div className="max-w-7xl mx-auto space-y-6">
+      <div className="min-h-screen bg-surface font-body-md text-on-surface flex flex-col">
+        <HeaderNav />
+        <main className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-12 py-4 space-y-4 flex-grow">
           
           {/* ── Admin Dashboard stats header ── */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             {/* Card 1: Quiz Title */}
-            <div className="glass-card p-4 flex items-center gap-3 bg-white/[0.02] border-white/10 shadow-lg shadow-black/10">
-              <div className="w-10 h-10 rounded-xl bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-xl">
-                📝
+            <div className="bg-surface-container-lowest border border-border-subtle shadow-sm rounded-2xl p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary text-xl">
+                <span className="material-symbols-outlined">menu_book</span>
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-white/40 text-[10px] uppercase font-bold tracking-wider leading-none mb-1">Topic</p>
-                <h4 className="text-sm font-semibold truncate leading-tight">{topic}</h4>
-                <p className="text-[11px] text-white/50 capitalize font-medium">{difficulty} mode</p>
+                <p className="text-on-surface-variant text-[10px] uppercase font-bold tracking-wider leading-none mb-1">Topic</p>
+                <h4 className="text-sm font-semibold truncate leading-tight text-on-surface">{topic}</h4>
+                <p className="text-[11px] text-on-surface-variant capitalize font-medium">{difficulty} mode</p>
               </div>
             </div>
 
             {/* Card 2: Room Code */}
-            <div className="glass-card p-4 flex items-center gap-3 bg-white/[0.02] border-white/10 shadow-lg shadow-black/10">
-              <div className="w-10 h-10 rounded-xl bg-brand-600/20 border border-brand-500/30 flex items-center justify-center text-xl">
-                🔑
+            <div className="bg-surface-container-lowest border border-border-subtle shadow-sm rounded-2xl p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary text-xl">
+                <span className="material-symbols-outlined">key</span>
               </div>
               <div className="flex-1">
-                <p className="text-white/40 text-[10px] uppercase font-bold tracking-wider leading-none mb-1">Room Code</p>
+                <p className="text-on-surface-variant text-[10px] uppercase font-bold tracking-wider leading-none mb-1">Room Code</p>
                 <div className="flex items-center gap-2">
-                  <h4 className="text-md font-black tracking-widest leading-none font-mono text-brand-300">{roomCode}</h4>
+                  <h4 className="text-md font-black tracking-widest leading-none font-display text-primary">{roomCode}</h4>
                   <button 
                     onClick={handleCopyRoomCode}
-                    className="text-[10px] text-white/30 hover:text-white/70 bg-white/5 border border-white/10 px-1.5 py-0.5 rounded transition-all font-sans font-normal"
+                    className="text-[10px] text-on-surface-variant hover:text-primary bg-surface border border-border-subtle px-1.5 py-0.5 rounded transition-all font-label-bold"
                   >
                     {copySuccess ? 'Copied' : 'Copy'}
                   </button>
@@ -541,46 +635,46 @@ const Host = () => {
             {/* Card 3: Connected Players */}
             <div 
               onClick={() => setShowPlayersList(!showPlayersList)}
-              className={`glass-card p-4 flex items-center gap-3 bg-white/[0.02] border-white/10 shadow-lg shadow-black/10 cursor-pointer hover:bg-white/[0.06] transition-all relative select-none ${showPlayersList ? 'z-[60]' : 'z-10'}`}
+              className={`bg-surface-container-lowest border border-border-subtle shadow-sm rounded-2xl p-4 flex items-center gap-3 cursor-pointer hover:border-primary transition-all relative select-none ${showPlayersList ? 'z-[60]' : 'z-10'}`}
             >
-              <div className="w-10 h-10 rounded-xl bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center text-xl flex-shrink-0">
-                👥
+              <div className="w-10 h-10 rounded-xl bg-primary-container/10 border border-primary-container/20 flex items-center justify-center text-primary-container text-xl flex-shrink-0">
+                <span className="material-symbols-outlined">groups</span>
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-white/40 text-[10px] uppercase font-bold tracking-wider leading-none mb-1">Live Players</p>
+                <p className="text-on-surface-variant text-[10px] uppercase font-bold tracking-wider leading-none mb-1">Live Players</p>
                 <div className="flex items-center gap-1.5 leading-none mb-1">
-                  <h4 className="text-md font-bold text-white leading-none">{players.length} Active</h4>
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <h4 className="text-md font-bold text-on-surface leading-none">{players.length} Active</h4>
+                  <span className="w-2 h-2 rounded-full bg-primary-container animate-pulse" />
                 </div>
-                <p className="text-[10px] text-brand-300 font-medium">Click to view list</p>
+                <p className="text-[10px] text-primary font-medium">Click to view list</p>
               </div>
 
               {/* Popup Box for Players List */}
               {showPlayersList && (
                 <div 
                   onClick={(e) => e.stopPropagation()}
-                  className="absolute top-full mt-2 left-0 right-0 z-[70] glass-card p-3 bg-[#16122f] border border-white/20 shadow-2xl rounded-xl"
+                  className="absolute top-full mt-2 left-0 right-0 z-[70] bg-surface-container-lowest border border-border-subtle shadow-2xl rounded-xl p-3"
                 >
-                  <div className="flex justify-between items-center border-b border-white/10 pb-1.5 mb-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-white/50">Participants</span>
+                  <div className="flex justify-between items-center border-b border-border-subtle pb-1.5 mb-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Participants</span>
                     <button 
                       onClick={() => setShowPlayersList(false)}
-                      className="text-white/40 hover:text-white text-[10px] font-sans font-bold"
+                      className="text-on-surface-variant hover:text-error text-[10px] font-label-bold"
                     >
                       ✕ Close
                     </button>
                   </div>
                   
                   {players.length === 0 ? (
-                    <p className="text-center py-4 text-white/30 text-xs">No players yet.</p>
+                    <p className="text-center py-4 text-on-surface-variant text-xs">No players yet.</p>
                   ) : (
                     <div className="overflow-y-auto max-h-[108px] space-y-1.5 pr-1 scrollbar-thin">
                       {players.map((p, idx) => (
-                        <div key={p.userId || idx} className="flex items-center gap-2 px-2 py-1.5 bg-white/5 rounded-lg border border-white/[0.03]">
-                          <div className="w-5 h-5 rounded-full bg-brand-500/20 text-brand-300 text-[10px] font-bold flex items-center justify-center">
+                        <div key={p.userId || idx} className="flex items-center gap-2 px-2 py-1.5 bg-surface rounded-lg border border-border-subtle">
+                          <div className="w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center">
                             {idx + 1}
                           </div>
-                          <span className="text-xs text-white/80 font-medium truncate">{p.nickname}</span>
+                          <span className="text-xs text-on-surface font-medium truncate">{p.nickname}</span>
                         </div>
                       ))}
                     </div>
@@ -590,19 +684,19 @@ const Host = () => {
             </div>
 
             {/* Card 4: Quiz Progress */}
-            <div className="glass-card p-4 flex flex-col justify-center bg-white/[0.02] border-white/10 shadow-lg shadow-black/10">
-              <div className="flex justify-between items-center text-[10px] uppercase font-bold tracking-wider text-white/40 mb-1.5">
+            <div className="bg-surface-container-lowest border border-border-subtle shadow-sm rounded-2xl p-4 flex flex-col justify-center">
+              <div className="flex justify-between items-center text-[10px] uppercase font-bold tracking-wider text-on-surface-variant mb-1.5">
                 <span>Quiz Progress</span>
-                <span className="text-brand-300 font-mono">Q{questionIndex + 1}/{totalQuestions}</span>
+                <span className="text-primary font-display font-bold">Q{questionIndex + 1}/{totalQuestions}</span>
               </div>
-              <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-brand-500 to-purple-500 rounded-full transition-all duration-300" style={{ width: `${progressPercent}%` }} />
+              <div className="w-full h-2 bg-surface-container-high rounded-full overflow-hidden">
+                <div className="h-full bg-primary rounded-full transition-all duration-300" style={{ width: `${progressPercent}%` }} />
               </div>
             </div>
           </div>
 
           {/* ── Main Dashboard 3-Column Layout ── */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
             
             {/* Column 1: Live Leaderboard (Left) */}
             <div className="lg:col-span-1">
@@ -613,27 +707,27 @@ const Host = () => {
             <div className="lg:col-span-2 space-y-4">
               
               {/* Controls & Status Bar */}
-              <div className="glass-card px-5 py-3.5 flex items-center justify-between bg-white/[0.03] border-white/10 shadow-lg">
+              <div className="bg-surface-container-lowest border border-border-subtle shadow-sm px-4 py-3 rounded-2xl flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 rounded-full bg-brand-500 animate-ping" />
-                  <span className="text-xs font-semibold tracking-wide text-brand-300 uppercase">
+                  <div className="w-2.5 h-2.5 rounded-full bg-primary animate-ping" />
+                  <span className="text-xs font-semibold tracking-wide text-primary uppercase">
                     Admin Console
                   </span>
                 </div>
-                <div className="text-xs text-white/50 font-medium">
+                <div className="text-xs text-on-surface-variant font-medium">
                   {timeUp ? (
-                    <span className="text-amber-400 animate-pulse flex items-center gap-1.5">
+                    <span className="text-primary font-bold flex items-center gap-1.5">
                       ⏳ Auto-advancing in a few seconds...
                     </span>
                   ) : (
-                    <span className="text-emerald-400 flex items-center gap-1.5">
+                    <span className="text-primary-container font-bold flex items-center gap-1.5">
                       🟢 Live: Players are answering
                     </span>
                   )}
                 </div>
                 <button
                   onClick={handleEndGame}
-                  className="bg-red-500/10 hover:bg-red-500/20 active:scale-95 text-red-400 text-xs font-bold py-1.5 px-4 rounded-xl border border-red-500/20 hover:border-red-500/40 transition-all cursor-pointer"
+                  className="bg-error/10 hover:bg-error/20 active:scale-95 text-error text-xs font-bold py-1.5 px-4 rounded-xl border border-error/20 transition-all cursor-pointer"
                 >
                   End Game
                 </button>
@@ -662,16 +756,17 @@ const Host = () => {
 
             {/* Column 3: Stats history panel (Right) */}
             <div className="lg:col-span-1">
-              <div className="glass-card p-5 h-full flex flex-col bg-white/[0.03] border-white/10 shadow-lg min-h-[400px]">
-                <h3 className="font-display font-bold text-white text-sm uppercase tracking-wider mb-4 flex items-center gap-2 border-b border-white/10 pb-3">
-                  📊 Question Stats
+              <div className="bg-surface-container-lowest border border-border-subtle shadow-sm p-5 h-full rounded-2xl flex flex-col min-h-[400px]">
+                <h3 className="font-display font-bold text-on-surface text-sm uppercase tracking-wider mb-4 flex items-center gap-2 border-b border-border-subtle pb-3">
+                  <span className="material-symbols-outlined text-lg">bar_chart</span>
+                  Question Stats
                 </h3>
                 
                 <div className="space-y-4 overflow-y-auto pr-1 flex-1 max-h-[500px] lg:max-h-[600px] scrollbar-thin">
                   {quizStats.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-48 text-center text-white/20">
-                      <span className="text-3xl mb-2">📈</span>
-                      <p className="text-xs">Stats for each completed question will appear here.</p>
+                    <div className="flex flex-col items-center justify-center h-48 text-center text-on-surface-variant/50">
+                      <span className="material-symbols-outlined text-4xl mb-2">monitoring</span>
+                      <p className="text-xs font-medium">Stats for each completed question will appear here.</p>
                     </div>
                   ) : (
                     [...quizStats].reverse().map((stat, reversedIdx) => {
@@ -679,24 +774,24 @@ const Host = () => {
                       const originalIdx = quizStats.length - 1 - reversedIdx;
                       const letters = ['A', 'B', 'C', 'D'];
                       const colors = [
-                        'bg-gradient-to-r from-red-600 to-red-500', 
-                        'bg-gradient-to-r from-blue-600 to-blue-500', 
-                        'bg-gradient-to-r from-amber-600 to-amber-500', 
-                        'bg-gradient-to-r from-emerald-600 to-emerald-500'
+                        'bg-error', 
+                        'bg-[#4285F4]', // Blue
+                        'bg-[#F4B400]', // Amber
+                        'bg-primary-container' // Emerald
                       ];
                       
                       return (
-                        <div key={originalIdx} className="bg-white/[0.02] rounded-xl p-3 border border-white/5 space-y-3">
+                        <div key={originalIdx} className="bg-surface rounded-xl p-3 border border-border-subtle space-y-3">
                           <div className="flex justify-between items-start gap-1">
-                            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-brand-500/20 text-brand-300 font-mono">
+                            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-primary/10 text-primary font-display">
                               Q{originalIdx + 1}
                             </span>
-                            <span className="text-[9px] text-white/30 font-medium font-mono">
+                            <span className="text-[9px] text-on-surface-variant font-medium font-display">
                               {stat.totalAnswers} Player{stat.totalAnswers !== 1 ? 's' : ''}
                             </span>
                           </div>
                           
-                          <p className="text-xs text-white/80 font-medium leading-normal line-clamp-2">
+                          <p className="text-xs text-on-surface font-semibold leading-normal line-clamp-2">
                             {stat.questionText}
                           </p>
                           
@@ -711,12 +806,12 @@ const Host = () => {
                               return (
                                 <div key={oIdx} className="space-y-1">
                                   <div className="flex items-center justify-between text-[10px]">
-                                    <span className={`font-semibold ${isCorrect ? 'text-emerald-400' : 'text-white/50'}`}>
+                                    <span className={`font-semibold ${isCorrect ? 'text-primary' : 'text-on-surface-variant'}`}>
                                       Option {letters[oIdx]} {isCorrect && '✓'}
                                     </span>
-                                    <span className="text-white/70 font-mono">{percentage}% ({cnt})</span>
+                                    <span className="text-on-surface-variant font-display font-medium">{percentage}% ({cnt})</span>
                                   </div>
-                                  <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                                  <div className="w-full h-1.5 bg-surface-container-high rounded-full overflow-hidden">
                                     <div 
                                       className={`h-full ${colors[oIdx]} rounded-full`}
                                       style={{ width: `${percentage}%` }}
@@ -735,7 +830,7 @@ const Host = () => {
             </div>
 
           </div>
-        </div>
+        </main>
       </div>
     );
   }

@@ -29,7 +29,7 @@ const getTopPlayers = async (roomCode, count = 10, playerNameMap = {}) => {
   const players = [];
   for (let i = 0; i < result.length; i += 2) {
     const userId = result[i];
-    const score = parseFloat(result[i + 1]);
+    const score = Math.floor(parseFloat(result[i + 1]));
     const rank = Math.floor(i / 2) + 1;
     players.push({
       userId,
@@ -46,7 +46,7 @@ const getPlayerScore = async (roomCode, userId) => {
   const redis = getRedis();
   const key = `quiz:leaderboard:${roomCode}`;
   const score = await redis.zscore(key, userId);
-  return score !== null ? parseFloat(score) : 0;
+  return score !== null ? Math.floor(parseFloat(score)) : 0;
 };
 
 const getPlayerRank = async (roomCode, userId) => {
@@ -69,14 +69,19 @@ const calculateAndAddScore = async (roomCode, userId, basePoints, timeLeft, isCo
   }
 
   // Award the manually assigned base points
-  const pointsEarned = basePoints;
-  const totalScore = await addScore(roomCode, userId, pointsEarned);
+  // Add a tiny fraction based on time left for tie-breaking.
+  // More time left = higher decimal fraction = better rank when points are equal.
+  const timeBonus = Math.max(0, timeLeft) / 1000;
+  const pointsEarned = basePoints + timeBonus;
+  
+  const totalScoreRaw = await addScore(roomCode, userId, pointsEarned);
+  const totalScore = Math.floor(totalScoreRaw);
 
   // Increment streak in Redis
   const streakKey = `quiz:streak:${roomCode}:${userId}`;
   const streak = await redis.incr(streakKey);
 
-  return { pointsEarned, totalScore, streak };
+  return { pointsEarned: Math.floor(pointsEarned), totalScore, streak };
 };
 
 const markAnswered = async (roomCode, questionIndex, userId) => {

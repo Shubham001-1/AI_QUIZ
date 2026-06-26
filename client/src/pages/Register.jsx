@@ -46,36 +46,39 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 pt-16">
-      {/* Background orbs */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-brand-600/15 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 left-1/4 w-80 h-80 bg-accent-600/10 rounded-full blur-3xl" />
-      </div>
+    <div className="min-h-screen bg-background font-body-md text-on-surface flex items-center justify-center px-4 py-16 relative overflow-hidden">
+      {/* Background Atmospheric Element */}
+      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] -z-10 -translate-y-1/2 translate-x-1/2"></div>
+      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-secondary/5 rounded-full blur-[100px] -z-10 translate-y-1/2 -translate-x-1/2"></div>
 
-      <div className="relative w-full max-w-md animate-slide-up">
+      {/* Top Left Logo Nav */}
+      <Link to="/" className="absolute top-8 left-8 md:left-12 font-headline-lg text-headline-lg font-bold text-primary tracking-tight">
+        QuizMaster
+      </Link>
+
+      <div className="relative w-full max-w-md animate-slide-up z-10">
         {/* Card */}
-        <div className="glass-card p-8">
+        <div className="bg-surface-container-lowest border border-border-subtle rounded-2xl p-8 shadow-sm">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-600 to-brand-500 shadow-lg shadow-brand-500/30 mb-4">
-              <span className="text-2xl">✨</span>
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary/10 mb-4">
+              <span className="material-symbols-outlined text-primary text-3xl">magic_button</span>
             </div>
-            <h1 className="font-display font-black text-3xl text-white mb-2">Create Account</h1>
-            <p className="text-white/50 text-sm">Join QuizAI and start hosting</p>
+            <h1 className="font-display-lg-mobile text-on-surface mb-2">Create Account</h1>
+            <p className="text-on-surface-variant text-sm font-body-md">Join QuizMaster and start hosting</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             {/* Error */}
             {error && (
-              <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
-                <p className="text-red-400 text-sm text-center">{error}</p>
+              <div className="p-3 bg-error-container border border-error/20 rounded-xl">
+                <p className="text-on-error-container font-medium text-sm text-center">{error}</p>
               </div>
             )}
 
             {/* Name */}
             <div>
-              <label className="block text-white/60 text-sm font-medium mb-1.5">Full Name</label>
+              <label className="block text-on-surface-variant text-sm font-label-bold mb-1.5">Full Name</label>
               <input
                 id="register-name"
                 type="text"
@@ -83,7 +86,7 @@ const Register = () => {
                 value={form.name}
                 onChange={handleChange}
                 placeholder="Jane Smith"
-                className="input-field"
+                className="w-full bg-surface border border-border-subtle rounded-xl px-4 py-3 text-on-surface placeholder-on-surface-variant/40 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all shadow-sm"
                 required
                 autoComplete="name"
               />
@@ -91,7 +94,7 @@ const Register = () => {
 
             {/* Email */}
             <div>
-              <label className="block text-white/60 text-sm font-medium mb-1.5">Email Address</label>
+              <label className="block text-on-surface-variant text-sm font-label-bold mb-1.5">Email Address</label>
               <input
                 id="register-email"
                 type="email"
@@ -99,7 +102,7 @@ const Register = () => {
                 value={form.email}
                 onChange={handleChange}
                 placeholder="jane@example.com"
-                className="input-field"
+                className="w-full bg-surface border border-border-subtle rounded-xl px-4 py-3 text-on-surface placeholder-on-surface-variant/40 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all shadow-sm"
                 required
                 autoComplete="email"
               />
@@ -107,7 +110,7 @@ const Register = () => {
 
             {/* Password */}
             <div>
-              <label className="block text-white/60 text-sm font-medium mb-1.5">Password</label>
+              <label className="block text-on-surface-variant text-sm font-label-bold mb-1.5">Password</label>
               <input
                 id="register-password"
                 type="password"
@@ -115,7 +118,7 @@ const Register = () => {
                 value={form.password}
                 onChange={handleChange}
                 placeholder="Min. 6 characters"
-                className="input-field"
+                className="w-full bg-surface border border-border-subtle rounded-xl px-4 py-3 text-on-surface placeholder-on-surface-variant/40 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all shadow-sm"
                 required
                 autoComplete="new-password"
               />
@@ -126,7 +129,7 @@ const Register = () => {
               id="register-submit"
               type="submit"
               disabled={loading}
-              className="btn-primary w-full py-3.5 text-base font-display font-bold mt-2 flex items-center justify-center gap-2"
+              className="w-full bg-primary-container text-white py-3.5 rounded-xl font-label-bold text-base mt-2 flex items-center justify-center gap-2 hover:bg-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md active:scale-95"
             >
               {loading ? (
                 <>
@@ -134,24 +137,24 @@ const Register = () => {
                   Creating Account...
                 </>
               ) : (
-                '🚀 Create Account'
+                'Create Account'
               )}
             </button>
           </form>
 
           {/* Divider */}
           <div className="flex items-center gap-3 my-6">
-            <div className="flex-1 h-px bg-white/10" />
-            <span className="text-white/30 text-xs">Already have an account?</span>
-            <div className="flex-1 h-px bg-white/10" />
+            <div className="flex-1 h-px bg-border-subtle" />
+            <span className="text-on-surface-variant text-xs font-medium">Already have an account?</span>
+            <div className="flex-1 h-px bg-border-subtle" />
           </div>
 
-          <Link to="/login" id="login-link" className="btn-secondary w-full py-3 text-sm font-semibold text-center block">
+          <Link to="/login" id="login-link" className="w-full bg-surface border border-border-subtle text-on-surface py-3 rounded-xl font-label-bold text-sm text-center block hover:bg-surface-container transition-all shadow-sm">
             Sign In Instead
           </Link>
         </div>
 
-        <p className="text-center text-white/30 text-xs mt-6">
+        <p className="text-center text-on-surface-variant/70 font-medium text-[11px] mt-6">
           By creating an account, you agree to our Terms of Service.
         </p>
       </div>

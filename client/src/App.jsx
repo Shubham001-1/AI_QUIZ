@@ -76,8 +76,7 @@ const App = () => {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <div className="min-h-screen bg-surface-950 bg-mesh">
-          <Navbar />
+        <div className="min-h-screen">
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/register" element={<Register />} />
