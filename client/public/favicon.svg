@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1dbf73" />
+      <stop offset="100%" stop-color="#006d3e" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000" flood-opacity="0.15" />
+    </filter>
+  </defs>
+  <!-- Background Rounded Rect -->
+  <rect width="512" height="512" rx="140" fill="url(#grad)" filter="url(#glow)" />
+  
+  <!-- Stylized Q and AI Spark -->
+  <g transform="translate(40, 40)">
+    <!-- Outer Ring of Q -->
+    <path d="M 216 70 C 120 70 42 148 42 244 C 42 340 120 418 216 418 C 256 418 293 404 322 382 L 372 432 C 380 440 392 440 400 432 L 412 420 C 420 412 420 400 412 392 L 362 342 C 384 313 398 276 398 236 M 216 118 C 281 118 334 171 334 236 C 334 301 281 354 216 354 C 151 354 98 301 98 236 C 98 171 151 118 216 118 Z" fill="#ffffff" />
+    
+    <!-- AI Spark (Four-Pointed Star) in the upper right -->
+    <path d="M 330 70 Q 330 115 375 115 Q 330 115 330 160 Q 330 115 285 115 Q 330 115 330 70 Z" fill="#ffffff" />
+    
+    <!-- A smaller AI Spark inside the Q counter -->
+    <path d="M 216 190 Q 216 220 246 220 Q 216 220 216 250 Q 216 220 186 220 Q 216 220 216 190 Z" fill="#6efdaa" />
+  </g>
+</svg>
