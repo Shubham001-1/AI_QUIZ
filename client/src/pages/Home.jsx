@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../App';
+import Navbar from '../components/Navbar';
 
 const Home = () => {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const [menuOpen, setMenuOpen] = useState(false);
 
   const handleHostClick = () => {
     if (isAuthenticated) {
@@ -25,45 +25,7 @@ const Home = () => {
 
   return (
     <div className="bg-surface font-body-md text-on-surface min-h-screen flex flex-col selection:bg-primary-container selection:text-white">
-      {/* TopNavBar */}
-      <header className="w-full sticky top-0 z-50 bg-surface-container-lowest border-b border-border-subtle shadow-sm">
-        <nav className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 flex items-center justify-between h-16 sm:h-20">
-          <div className="flex items-center gap-6">
-            <Link to="/" className="font-headline-lg text-headline-lg font-bold text-primary">QuizMaster</Link>
-            <div className="hidden lg:flex items-center gap-6">
-              <Link to="/" className="font-body-md text-body-md text-primary border-b-2 border-primary pb-1">Home</Link>
-              <Link to="/builder" className="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors duration-200">Create Quiz</Link>
-              <Link to="/host" className="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors duration-200">Host Quiz</Link>
-              <Link to="/play" className="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors duration-200">Join Quiz</Link>
-            </div>
-          </div>
-          <div className="hidden lg:flex items-center gap-4">
-            <Link to="/login" className="font-label-bold text-on-surface-variant hover:text-primary px-4 py-2 transition-colors">Sign In</Link>
-            <Link to="/login" className="bg-primary-container text-white px-6 py-2 rounded-lg font-label-bold hover:opacity-90 transition-opacity">Join</Link>
-          </div>
-          {/* Mobile Hamburger */}
-          <button
-            className="lg:hidden p-2 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors"
-            onClick={() => setMenuOpen(!menuOpen)}
-            aria-label="Toggle menu"
-          >
-            <span className="material-symbols-outlined">{menuOpen ? 'close' : 'menu'}</span>
-          </button>
-        </nav>
-        {/* Mobile Menu */}
-        {menuOpen && (
-          <div className="lg:hidden border-t border-border-subtle bg-surface-container-lowest px-4 pb-4 space-y-1 shadow-md">
-            <Link to="/" className="block px-4 py-2 rounded-lg text-sm font-medium text-primary bg-primary/10" onClick={() => setMenuOpen(false)}>Home</Link>
-            <Link to="/builder" className="block px-4 py-2 rounded-lg text-sm font-medium text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors" onClick={() => setMenuOpen(false)}>Create Quiz</Link>
-            <Link to="/host" className="block px-4 py-2 rounded-lg text-sm font-medium text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors" onClick={() => setMenuOpen(false)}>Host Quiz</Link>
-            <Link to="/play" className="block px-4 py-2 rounded-lg text-sm font-medium text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors" onClick={() => setMenuOpen(false)}>Join Quiz</Link>
-            <div className="pt-3 border-t border-border-subtle flex flex-col gap-2">
-              <Link to="/login" className="block px-4 py-2 rounded-lg text-sm font-medium text-on-surface-variant hover:text-primary transition-colors" onClick={() => setMenuOpen(false)}>Sign In</Link>
-              <Link to="/login" className="block px-4 py-2 rounded-lg text-sm font-semibold bg-primary-container text-white text-center hover:opacity-90 transition-opacity" onClick={() => setMenuOpen(false)}>Join</Link>
-            </div>
-          </div>
-        )}
-      </header>
+      <Navbar />
 
       <main className="flex-1">
         {/* Hero Section */}

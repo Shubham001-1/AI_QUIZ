@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import useSocket from '../hooks/useSocket';
 import QuestionCard from '../components/QuestionCard';
 import LiveLeaderboard from '../components/LiveLeaderboard';
+import Navbar from '../components/Navbar';
 
 const PLAY_PHASES = {
   JOIN: 'join',
@@ -192,7 +193,6 @@ const Play = () => {
     emit('SUBMIT_ANSWER', { roomCode, userId, selectedOption: optionIndex, timeLeft });
   };
 
-  const [playMenuOpen, setPlayMenuOpen] = useState(false);
   // Reusable card class for light theme
   const cardClass = "bg-surface-container-lowest border border-border-subtle shadow-sm rounded-2xl";
 
@@ -200,47 +200,7 @@ const Play = () => {
   if (phase === PLAY_PHASES.JOIN) {
     return (
       <div className="bg-surface font-body-md text-on-surface min-h-screen flex flex-col">
-        {/* Top Navbar */}
-        <header className="w-full sticky top-0 z-50 bg-surface-container-lowest border-b border-border-subtle shadow-sm">
-          <nav className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 flex items-center justify-between h-16 sm:h-20">
-            <div className="flex items-center gap-6">
-              <a href="/" className="font-headline-lg text-headline-lg font-bold text-primary">QuizMaster</a>
-              <div className="hidden lg:flex items-center gap-6">
-                <a href="/" className="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors duration-200">Home</a>
-                <a href="/builder" className="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors duration-200">Create Quiz</a>
-                <a href="/host" className="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors duration-200">Host Quiz</a>
-                <div className="relative">
-                  <a href="/play" className="font-body-md text-body-md text-primary transition-colors">Join Quiz</a>
-                  <div className="absolute -bottom-2 left-0 w-full h-0.5 bg-primary"></div>
-                </div>
-              </div>
-            </div>
-            <div className="hidden lg:flex items-center gap-4">
-              <button onClick={() => navigate('/login')} className="font-label-bold text-on-surface-variant hover:text-primary transition-colors">Sign In</button>
-              <button onClick={() => navigate('/login')} className="bg-primary-container text-white px-6 py-2 rounded-lg font-label-bold hover:opacity-90 transition-opacity shadow-sm">Join</button>
-            </div>
-            {/* Mobile Hamburger */}
-            <button
-              className="lg:hidden p-2 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors"
-              onClick={() => setPlayMenuOpen(v => !v)}
-              aria-label="Toggle menu"
-            >
-              <span className="material-symbols-outlined">{playMenuOpen ? 'close' : 'menu'}</span>
-            </button>
-          </nav>
-          {playMenuOpen && (
-            <div className="lg:hidden border-t border-border-subtle bg-surface-container-lowest px-4 pb-4 space-y-1 shadow-md">
-              <a href="/" className="block px-4 py-2 rounded-lg text-sm font-medium text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors">Home</a>
-              <a href="/builder" className="block px-4 py-2 rounded-lg text-sm font-medium text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors">Create Quiz</a>
-              <a href="/host" className="block px-4 py-2 rounded-lg text-sm font-medium text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors">Host Quiz</a>
-              <a href="/play" className="block px-4 py-2 rounded-lg text-sm font-medium text-primary bg-primary/10">Join Quiz</a>
-              <div className="pt-3 border-t border-border-subtle flex flex-col gap-2">
-                <button onClick={() => navigate('/login')} className="block text-left px-4 py-2 rounded-lg text-sm font-medium text-on-surface-variant hover:text-primary transition-colors">Sign In</button>
-                <button onClick={() => navigate('/login')} className="block text-left px-4 py-2 rounded-lg text-sm font-semibold bg-primary-container text-white text-center hover:opacity-90 transition-opacity">Join</button>
-              </div>
-            </div>
-          )}
-        </header>
+        <Navbar />
 
         <main className="flex-grow flex flex-col items-center justify-center px-4 py-12">
           <div className={`w-full max-w-lg ${cardClass} p-8 md:p-12 animate-slide-up`}>

@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../App';
 import useSocket from '../hooks/useSocket';
+import Navbar from '../components/Navbar';
 import PlayerList from '../components/PlayerList';
 import LiveLeaderboard from '../components/LiveLeaderboard';
 import QuestionCard from '../components/QuestionCard';
@@ -294,55 +295,11 @@ const Host = () => {
     }
   };
 
-  // Common Header mapped to light theme for all phases
-  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
-  const HeaderNav = () => (
-    <header className="w-full sticky top-0 z-50 bg-surface-container-lowest border-b border-border-subtle shadow-sm">
-      <nav className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 flex items-center justify-between h-16 sm:h-20">
-        <div className="flex items-center gap-6">
-          <a href="/" className="font-headline-lg text-headline-lg font-bold text-primary">QuizMaster</a>
-          <div className="hidden lg:flex items-center gap-6">
-            <a href="/" className="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors duration-200">Home</a>
-            <a href="/builder" className="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors duration-200">Create Quiz</a>
-            <div className="relative">
-              <a href="/host" className="font-body-md text-body-md text-primary transition-colors">Host Quiz</a>
-              <div className="absolute -bottom-2 left-0 w-full h-0.5 bg-primary"></div>
-            </div>
-            <a href="/play" className="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors duration-200">Join Quiz</a>
-          </div>
-        </div>
-        <div className="hidden lg:flex items-center gap-4">
-          <span className="font-body-md font-bold text-on-surface-variant">
-            {user ? user.name : 'Host'}
-          </span>
-        </div>
-        <button
-          className="lg:hidden p-2 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors"
-          onClick={() => setMobileMenuOpen(v => !v)}
-          aria-label="Toggle menu"
-        >
-          <span className="material-symbols-outlined">{mobileMenuOpen ? 'close' : 'menu'}</span>
-        </button>
-      </nav>
-      {mobileMenuOpen && (
-        <div className="lg:hidden border-t border-border-subtle bg-surface-container-lowest px-4 pb-4 space-y-1 shadow-md">
-          <a href="/" className="block px-4 py-2 rounded-lg text-sm font-medium text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors">Home</a>
-          <a href="/builder" className="block px-4 py-2 rounded-lg text-sm font-medium text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors">Create Quiz</a>
-          <a href="/host" className="block px-4 py-2 rounded-lg text-sm font-medium text-primary bg-primary/10">Host Quiz</a>
-          <a href="/play" className="block px-4 py-2 rounded-lg text-sm font-medium text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors">Join Quiz</a>
-          <div className="pt-3 border-t border-border-subtle">
-            <span className="block px-4 py-2 text-sm font-bold text-on-surface-variant">{user ? user.name : 'Host'}</span>
-          </div>
-        </div>
-      )}
-    </header>
-  );
-
   // SETUP Phase
   if (phase === GAME_PHASES.SETUP || phase === GAME_PHASES.GENERATING) {
     return (
       <div className="min-h-screen bg-surface font-body-md text-on-surface flex flex-col">
-        <HeaderNav />
+        <Navbar />
         <main className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 py-8 sm:py-12 flex-grow w-full animate-slide-up">
           <section className="mb-8 sm:mb-12">
             <h1 className="text-2xl sm:text-4xl lg:text-display-lg font-display-lg font-bold text-on-surface mb-2">Host & Manage Your Quizzes</h1>
@@ -516,7 +473,7 @@ const Host = () => {
   if (phase === GAME_PHASES.LOBBY) {
     return (
       <div className="min-h-screen bg-surface font-body-md text-on-surface flex flex-col">
-        <HeaderNav />
+        <Navbar />
         <main className="flex-grow flex items-center justify-center px-4 py-8 sm:py-12">
           <div className="max-w-4xl w-full">
             {/* Header */}
@@ -596,7 +553,7 @@ const Host = () => {
 
     return (
       <div className="min-h-screen bg-surface font-body-md text-on-surface flex flex-col">
-        <HeaderNav />
+        <Navbar />
         <main className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-12 py-4 space-y-4 flex-grow">
           
           {/* ── Admin Dashboard stats header ── */}

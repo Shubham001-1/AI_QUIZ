@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../App';
 import AICompanion from '../components/AICompanion';
+import Navbar from '../components/Navbar';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 const OPTION_LABELS = ['A', 'B', 'C', 'D'];
@@ -302,32 +303,10 @@ const QuizBuilder = () => {
     (c) => c.questionText.trim() && c.options.every((o) => o.trim())
   ).length;
 
-  // Header Component mapped to light theme
-  const HeaderNav = () => (
-    <header className="w-full sticky top-0 z-50 bg-surface-container-lowest border-b border-border-subtle shadow-sm">
-      <nav className="max-w-container-max mx-auto px-margin-desktop flex items-center justify-between h-16">
-        <div className="flex items-center gap-10">
-          <a href="/" className="font-headline-lg text-headline-lg font-bold text-primary tracking-tight">QuizMaster</a>
-          <div className="hidden lg:flex items-center gap-6">
-            <a href="/" className="font-body-md font-bold text-on-surface-variant hover:text-primary transition-colors duration-200">Home</a>
-            <div className="relative">
-              <a href="/builder" className="font-body-md font-bold text-primary border-b-2 border-primary pb-1">Create Quiz</a>
-            </div>
-            <a href="/host" className="font-body-md font-bold text-on-surface-variant hover:text-primary transition-colors duration-200">Host Quiz</a>
-            <a href="/play" className="font-body-md font-bold text-on-surface-variant hover:text-primary transition-colors duration-200">Join Quiz</a>
-          </div>
-        </div>
-        <div className="flex items-center gap-6">
-          <span className="material-symbols-outlined text-on-surface-variant p-2 hover:bg-surface-container rounded-full transition-colors cursor-pointer">account_circle</span>
-        </div>
-      </nav>
-    </header>
-  );
-
   return (
     <div className="min-h-screen bg-surface font-body-md text-on-surface flex flex-col" style={{ paddingRight: aiPanelOpen ? '360px' : '0', transition: 'padding-right 0.3s ease' }}>
       
-      <HeaderNav />
+      <Navbar />
 
       {/* ── Sticky Toolbar ── */}
       <div className="sticky top-16 z-30 bg-surface-container-lowest/95 backdrop-blur-xl border-b border-border-subtle shadow-sm">
